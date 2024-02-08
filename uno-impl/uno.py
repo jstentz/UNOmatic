@@ -32,35 +32,32 @@ class Color(Enum):
   GREEN = 2
   BLUE = 3
 
-class Type(Enum):
-  NUMBER = 0
-  PLUSTWO = 1
-  REVERSE = 2
-  PLUSFOUR = 3
-  WILD = 4
-
 class Card:
-  def __init__(self, color : Optional[Color], number : Optional[int], type : Type = Type.NUMBER):
+  def __init__(self, color: Optional[Color], number: Optional[int]):
     self.color = color
     self.number = number
-    self.type = type
+    self.type = type(self)
     
     if not self._validate():
       raise ValueError('Invalid card')
 
   # ensures that we have valid entries for all cards
   def _validate(self):
-    if self.type == Type.NUMBER:
+    if self.type == Number:
       return self.color is not None and self.number is not None
-    elif self.type == Type.PLUSTWO or self.type == Type.REVERSE:
+    elif self.type == PlusTwo or self.type == Reverse:
       return self.color is not None and self.number is None
-    elif self.type == Type.PLUSFOUR or self.type == Type.WILD:
+    elif self.type == PlusFour or self.type == Wild:
       return self.color is None and self.number is None
     else:
       return False
   
   # overwrite by derived classes
   def is_playable(self, state : UNO):
+    pass
+
+  # overwrite by derived classes
+  def play_card(self, state : UNO):
     pass
     
   def __eq__(self, other):
@@ -71,7 +68,7 @@ class Card:
   
 class Number(Card):
   def __init__(self, color : Optional[Color], number : Optional[int]):
-    super().__init__(color, number)
+    super().__init__(color=color, number=number)
 
   
 
@@ -79,23 +76,23 @@ class Number(Card):
 
 
 class PlusTwo(Card):
-  def __init__(self, color : Optional[Color]):
-    super().__init__(color, None, type=Type.PLUSTWO)
+  def __init__(self, color: Optional[Color]):
+    super().__init__(color=color, number=None)
 
 class Reverse(Card):
-  def __init__(self, color : Optional[Color]):
-    super().__init__(color, None, type=Type.REVERSE)
+  def __init__(self, color: Optional[Color]):
+    super().__init__(color=color, number=None)
 
 class PlusFour(Card):
   def __init__(self):
-    super().__init__(None, None, type=Type.PLUSFOUR)
+    super().__init__(color=None, number=None)
 
   def is_playable(self, state: UNO):
     return True
 
 class Wild(Card):
   def __init__(self):
-    super().__init__(None, None, type=Type.WILD)
+    super().__init__(color=None, number=None)
 
   def is_playable(self, state: UNO):
     return True
@@ -117,4 +114,14 @@ What should they be able to do?
 
 
 
+if __name__ == '__main__':
+  my_card = Number(Color.YELLOW, 0)
+  my_card1 = PlusTwo(Color.RED)
+  my_card2 = PlusFour()
+  my_card3 = Wild()
+  my_card4 = Number(Color.YELLOW, 0)
+  my_card5 = PlusTwo(Color.RED)
 
+  print(my_card == my_card3) # false
+  print(my_card == my_card4) # true
+  print(my_card1 == my_card5) # true
