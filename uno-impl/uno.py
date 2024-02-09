@@ -6,7 +6,7 @@ state:
  * draw_pile -> I won't know this, which is completely fine
   * I'll just have to have them pass in a card that is being dispensed from the draw_pile
  * discard_pile 
-  * you actually only need the top card of this 
+  * you actually only need the top card of this, but let's just store the whole deck 
  * 
 
 Official uno rules: https://service.mattel.com/instruction_sheets/42001pr.pdf
@@ -16,6 +16,7 @@ Official uno rules: https://service.mattel.com/instruction_sheets/42001pr.pdf
 from typing import Collection, Optional
 from enum import IntEnum
 import numpy as np # for now this is just used for weighted sampling
+import random
 
 
 #################################################### GAME STATE ####################################################
@@ -48,7 +49,7 @@ class Card:
       raise ValueError('Invalid card')
 
   # ensures that we have valid entries for all cards
-  def _validate(self):
+  def _validate(self) -> bool:
     if self.type == Number:
       return self.color is not None and self.number is not None
     elif self.type in [PlusTwo, Reverse, Skip]:
@@ -58,12 +59,7 @@ class Card:
     else:
       return False
   
-  # overwrite by derived classes
-  def is_playable(self, state: UNO):
-    pass
-
-  # overwrite by derived classes
-  def play_card(self, state: UNO):
+  def play_card(self, state: UNO) -> None:
     # TODO: all cards add themselves to the discard pile, so this should do that
     pass
     
@@ -82,36 +78,45 @@ class Card:
     return res
   
 class Number(Card):
-  def __init__(self, color : Optional[Color], number : Optional[int]):
-    super().__init__(color=color, number=number)
-
-  # def play_card(self, game_state):
-
+  def is_playable(self, top_card: Card, deck_color: Color) -> bool:
+    return self.color == deck_color or (top_card.type == Number and top_card.number == self.number)
 
 class PlusTwo(Card):
   def __init__(self, color: Optional[Color]):
     super().__init__(color=color, number=None)
 
+  # NOTE: this function will never be called in the case where the control flow
+  # doesn't let a player play the card... these functions are unaware of the rest
+  # of the game state 
+  def is_playable(self, top_card: Card, deck_color: Color) -> bool:
+    return self.color == deck_color or top_card.type == PlusTwo
+
 class Skip(Card):
   def __init__(self, color: Optional[Color]):
     super().__init__(color=color, number=None)
+
+  def is_playable(self, top_card: Card, deck_color: Color) -> bool:
+    return self.color == deck_color or top_card.type == Skip
 
 class Reverse(Card):
   def __init__(self, color: Optional[Color]):
     super().__init__(color=color, number=None)
 
+  def is_playable(self, top_card: Card, deck_color: Color) -> bool:
+    return self.color == deck_color or top_card.type == Reverse
+
 class PlusFour(Card):
   def __init__(self):
     super().__init__(color=None, number=None)
 
-  def is_playable(self, state: UNO):
+  def is_playable(self, top_card: Card, deck_color: Color) -> bool:
     return True
 
 class Wild(Card):
   def __init__(self):
     super().__init__(color=None, number=None)
 
-  def is_playable(self, state: UNO):
+  def is_playable(self, top_card: Card, deck_color: Color) -> bool:
     return True
 
 
@@ -133,22 +138,45 @@ class Player:
   def __init__(self, hand: Collection[Card]):
     self.hand = hand
 
-  # A player is just the cards that they have
-  def __repr__(self):
+    # sort the hand
+    self._sort_hand()
+
+  def receive_card(self, card : Card) -> None:
+    self.hand.append(card)
+
+    # keep hand sorted
+    self._sort_hand()
+
+  # asks the player for a card
+  # they could return None if they have no card they can play
+  # TODO: are you allowed to draw even if you can play? -> Yes
+  def get_card(self, top_card: Card, deck_color: Color) -> Optional[Card]:
+    playable_cards = list(filter(lambda c: c.is_playable(top_card, deck_color), self.hand))
+    if playable_cards == []:
+      return None
+    
+    print('Playable Cards:')
+    print(Player._hand_to_str(playable_cards))
+    
+
+
+  def can_play(self, top_card: Card) -> bool:
+    return any(map(lambda c: c.is_playable(top_card), self.hand))
+  
+  def _sort_hand(self) -> None:
     # sort by card color, then card type, then card number
-    sorted_cards = sorted(self.hand, key=lambda c: (
-                          c.color if c.color is not None else -1, 
-                          c.type.__name__, 
-                          c.number if c.number is not None else -1))
-    
+    self.hand.sort(key=lambda c: (
+                   c.color if c.color is not None else -1, 
+                   c.type.__name__, 
+                   c.number if c.number is not None else -1))
+  
+  @staticmethod
+  def _hand_to_str(hand):
+    return '\n'.join(map(lambda x: f'{x[0]}: {x[1]}', enumerate(hand)))
+
+  def __repr__(self):
     # join the list of cards into a single string
-    return '\n'.join(map(lambda c: str(c), sorted_cards))
-
-
-# for now, let's create some notion of a deck, but later, that part will be removed in favor
-# of just providing card information
-    
-
+    return Player._hand_to_str(self.hand)
 
 #################################################### DECK ####################################################
 
@@ -162,10 +190,6 @@ class Deck:
   REVERSE_CARDS = 2 * Color.NUM_COLORS
   PLUSFOUR_CARDS = 4
   WILD_CARDS = 4
-
-
-  def __init__(self):
-    pass
 
   # generates non-replacing cards based on distribution of UNO cards
   def generate_card(self):
@@ -191,7 +215,6 @@ class Deck:
     numbers_dist[1:] = 2 * Color.NUM_COLORS
     numbers_dist /= Deck.NUMBER_CARDS
 
-
     # generate card type
     card_type = np.random.choice(types, p=types_dist)
 
@@ -210,10 +233,14 @@ class Deck:
       return card_type(color=card_color, number=card_number)
 
     
-
 if __name__ == '__main__':
   deck = Deck()
   hand = [deck.generate_card() for _ in range(7)]
   player = Player(hand)
-  print(player)
+  print(player, end='\n\n')
 
+  while input('') != 'q':
+    card = deck.generate_card()
+    deck_color = card.color if card.color is not None else random.choice([Color.BLUE, Color.GREEN, Color.RED, Color.YELLOW])
+    print(f'Card: {card}, deck_color: {deck_color.name}')
+    player.get_card(card, deck_color)
