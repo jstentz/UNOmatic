@@ -14,23 +14,42 @@ Official uno rules: https://service.mattel.com/instruction_sheets/42001pr.pdf
 '''
 
 from typing import Collection, Optional
-from enum import Enum
+from enum import IntEnum
+import numpy as np # for now this is just used for weighted sampling
 
 
 #################################################### GAME STATE ####################################################
 
 class UNO:
-  def __init__(self, players : int):
-    # self.bruh : Card
-    pass 
+  def __init__(self, num_players : int):
+    self.top_card : Optional[Card] = None
+    self.color : Optional[Color] = None # this is extra info for when the top card is wild or plus4
+    self.turn : int = 0 # stores the index of the current player's turn
+
 
 #################################################### CARDS ####################################################
 
-class Color(Enum):
+class Color(IntEnum):
   RED = 0
   YELLOW = 1
   GREEN = 2
   BLUE = 3
+  NUM_COLORS = 4
+
+  @staticmethod
+  def to_string(color):
+    # TODO: swap this out for match + case statement
+    if color == Color.RED:
+      return 'RED'
+    elif color == Color.YELLOW:
+      return 'YELLOW'
+    elif color == Color.GREEN:
+      return 'GREEN'
+    elif color == Color.BLUE:
+      return 'BLUE'
+    else:
+      raise ValueError('Invalid color')
+
 
 class Card:
   def __init__(self, color: Optional[Color], number: Optional[int]):
@@ -38,6 +57,7 @@ class Card:
     self.number = number
     self.type = type(self)
     
+    # ensure that we've created a valid card
     if not self._validate():
       raise ValueError('Invalid card')
 
@@ -45,7 +65,7 @@ class Card:
   def _validate(self):
     if self.type == Number:
       return self.color is not None and self.number is not None
-    elif self.type == PlusTwo or self.type == Reverse:
+    elif self.type == PlusTwo or self.type == Reverse or self.type == Skip:
       return self.color is not None and self.number is None
     elif self.type == PlusFour or self.type == Wild:
       return self.color is None and self.number is None
@@ -58,6 +78,7 @@ class Card:
 
   # overwrite by derived classes
   def play_card(self, state : UNO):
+    # TODO: all cards add themselves to the discard pile, so this should do that
     pass
     
   def __eq__(self, other):
@@ -65,6 +86,14 @@ class Card:
            and self.type == other.type \
            and self.color == other.color \
            and self.number == other.number 
+  
+  def __repr__(self):
+    # TODO: use text coloring instead of color out front 
+    res = ''
+    res += f'{Color.to_string(self.color):<8}' if self.color is not None else ''
+    res += f'{self.type.__name__:<8}' if self.type != Number else ''
+    res += f'{self.number}' if self.number is not None else ''
+    return res
   
 class Number(Card):
   def __init__(self, color : Optional[Color], number : Optional[int]):
@@ -76,6 +105,10 @@ class Number(Card):
 
 
 class PlusTwo(Card):
+  def __init__(self, color: Optional[Color]):
+    super().__init__(color=color, number=None)
+
+class Skip(Card):
   def __init__(self, color: Optional[Color]):
     super().__init__(color=color, number=None)
 
@@ -112,16 +145,80 @@ What should they be able to do?
 
 '''
 
+class Player:
+  def __init__(self, hand : Collection[Card]):
+    self.hand = hand
 
+
+# for now, let's create some notion of a deck, but later, that part will be removed in favor
+# of just providing card information
+    
+
+
+#################################################### DECK ####################################################
+
+class Deck:
+  TOTAL_CARDS = 108
+
+  # 2 per number (1 through 9) + 1 zero 
+  NUMBER_CARDS = (2 * 9 + 1) * Color.NUM_COLORS
+  PLUSTWO_CARDS = 2 * Color.NUM_COLORS
+  SKIP_CARDS = 2 * Color.NUM_COLORS
+  REVERSE_CARDS = 2 * Color.NUM_COLORS
+  PLUSFOUR_CARDS = 4
+  WILD_CARDS = 4
+
+
+  def __init__(self):
+    pass
+
+  # generates non-replacing cards based on distribution of UNO cards
+  def generate_card(self):
+    # create distribution for card types 
+    types = np.array([Number, PlusTwo, Skip, Reverse, PlusFour, Wild])
+    types_dist = np.array([
+      Deck.NUMBER_CARDS,
+      Deck.PLUSTWO_CARDS,
+      Deck.SKIP_CARDS,
+      Deck.REVERSE_CARDS,
+      Deck.PLUSFOUR_CARDS,
+      Deck.WILD_CARDS
+    ]) / Deck.TOTAL_CARDS
+
+    # create distribution for card colors
+    colors = np.array([Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE])
+    colors_dist = np.ones(Color.NUM_COLORS) / Color.NUM_COLORS
+
+    # create distribution for card numbers
+    numbers = np.arange(10)
+    numbers_dist = np.empty(10)
+    numbers_dist[0] = Color.NUM_COLORS
+    numbers_dist[1:] = 2 * Color.NUM_COLORS
+    numbers_dist /= Deck.NUMBER_CARDS
+
+
+    # generate card type
+    card_type = np.random.choice(types, p=types_dist)
+
+    # generate card color 
+    card_color = np.random.choice(colors, p=colors_dist)
+
+    # generate card number
+    card_number = np.random.choice(numbers, p=numbers_dist)
+
+    # create the correct card
+    if card_type == PlusFour or card_type == Wild:
+      return card_type()
+    elif card_type == PlusTwo or card_type == Skip or card_type == Reverse:
+      return card_type(color=card_color)
+    else: # number card
+      return card_type(color=card_color, number=card_number)
+
+    
 
 if __name__ == '__main__':
-  my_card = Number(Color.YELLOW, 0)
-  my_card1 = PlusTwo(Color.RED)
-  my_card2 = PlusFour()
-  my_card3 = Wild()
-  my_card4 = Number(Color.YELLOW, 0)
-  my_card5 = PlusTwo(Color.RED)
+  deck = Deck()
 
-  print(my_card == my_card3) # false
-  print(my_card == my_card4) # true
-  print(my_card1 == my_card5) # true
+  for _ in range(10):
+    print(deck.generate_card())
+
