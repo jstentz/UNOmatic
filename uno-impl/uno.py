@@ -51,19 +51,19 @@ class Card:
   def _validate(self):
     if self.type == Number:
       return self.color is not None and self.number is not None
-    elif self.type == PlusTwo or self.type == Reverse or self.type == Skip:
+    elif self.type in [PlusTwo, Reverse, Skip]:
       return self.color is not None and self.number is None
-    elif self.type == PlusFour or self.type == Wild:
+    elif self.type in [PlusFour, Wild]:
       return self.color is None and self.number is None
     else:
       return False
   
   # overwrite by derived classes
-  def is_playable(self, state : UNO):
+  def is_playable(self, state: UNO):
     pass
 
   # overwrite by derived classes
-  def play_card(self, state : UNO):
+  def play_card(self, state: UNO):
     # TODO: all cards add themselves to the discard pile, so this should do that
     pass
     
@@ -84,8 +84,6 @@ class Card:
 class Number(Card):
   def __init__(self, color : Optional[Color], number : Optional[int]):
     super().__init__(color=color, number=number)
-
-  
 
   # def play_card(self, game_state):
 
@@ -132,8 +130,19 @@ What should they be able to do?
 '''
 
 class Player:
-  def __init__(self, hand : Collection[Card]):
+  def __init__(self, hand: Collection[Card]):
     self.hand = hand
+
+  # A player is just the cards that they have
+  def __repr__(self):
+    # sort by card color, then card type, then card number
+    sorted_cards = sorted(self.hand, key=lambda c: (
+                          c.color if c.color is not None else -1, 
+                          c.type.__name__, 
+                          c.number if c.number is not None else -1))
+    
+    # join the list of cards into a single string
+    return '\n'.join(map(lambda c: str(c), sorted_cards))
 
 
 # for now, let's create some notion of a deck, but later, that part will be removed in favor
@@ -204,7 +213,7 @@ class Deck:
 
 if __name__ == '__main__':
   deck = Deck()
-
-  for _ in range(10):
-    print(deck.generate_card())
+  hand = [deck.generate_card() for _ in range(7)]
+  player = Player(hand)
+  print(player)
 
