@@ -36,20 +36,6 @@ class Color(IntEnum):
   BLUE = 3
   NUM_COLORS = 4
 
-  @staticmethod
-  def to_string(color):
-    # TODO: swap this out for match + case statement
-    if color == Color.RED:
-      return 'RED'
-    elif color == Color.YELLOW:
-      return 'YELLOW'
-    elif color == Color.GREEN:
-      return 'GREEN'
-    elif color == Color.BLUE:
-      return 'BLUE'
-    else:
-      raise ValueError('Invalid color')
-
 
 class Card:
   def __init__(self, color: Optional[Color], number: Optional[int]):
@@ -90,7 +76,7 @@ class Card:
   def __repr__(self):
     # TODO: use text coloring instead of color out front 
     res = ''
-    res += f'{Color.to_string(self.color):<8}' if self.color is not None else ''
+    res += f'{self.color.name:<8}' if self.color is not None else ''
     res += f'{self.type.__name__:<8}' if self.type != Number else ''
     res += f'{self.number}' if self.number is not None else ''
     return res
@@ -186,7 +172,7 @@ class Deck:
     ]) / Deck.TOTAL_CARDS
 
     # create distribution for card colors
-    colors = np.array([Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE])
+    colors = [Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE]
     colors_dist = np.ones(Color.NUM_COLORS) / Color.NUM_COLORS
 
     # create distribution for card numbers
@@ -201,7 +187,7 @@ class Deck:
     card_type = np.random.choice(types, p=types_dist)
 
     # generate card color 
-    card_color = np.random.choice(colors, p=colors_dist)
+    card_color = colors[np.random.choice(Color.NUM_COLORS, p=colors_dist)]
 
     # generate card number
     card_number = np.random.choice(numbers, p=numbers_dist)
