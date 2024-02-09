@@ -318,18 +318,6 @@ class Wild(Card):
 
 #################################################### PLAYERS ####################################################
 
-'''
-What info do I need to store in a player?
- * list of cards
-
-What should they be able to do?
- * Play a card when asked
- * Receive a card
- * call or not call a bluff when asked
- * call UNO -> add this in the future
-
-'''
-
 class Player:
   def __init__(self, hand: Collection[Card]):
     self.hand = hand
