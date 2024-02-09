@@ -18,14 +18,58 @@ from enum import IntEnum
 import numpy as np # for now this is just used for weighted sampling
 import random
 
-
 #################################################### GAME STATE ####################################################
 
+# TODO: I could have some notion of a Hand class, but that might be overkill... it would have printing, adding, getting playable cards, etc
+
 class UNO:
-  def __init__(self, num_players : int):
-    self.top_card : Optional[Card] = None
-    self.color : Optional[Color] = None # this is extra info for when the top card is wild or plus4
-    self.turn : int = 0 # stores the index of the current player's turn
+  def __init__(self, num_players: int, hand_size: int = 7):
+    self.num_players: int = num_players
+    self.hand_size: int = hand_size
+    self.reset()
+    
+  def reset(self):
+    self.draw_pile: Deck = Deck(Deck.TOTAL_CARDS)
+    self.discard_pile: Deck = Deck(0)
+    self.color: Optional[Color] = None # this is extra info for when the top card is wild or plus4
+    self.turn: int = 0 # stores the index of the current player's turn
+    self.dir: int = +1 # stores which direction the game is moving in 
+
+    # generate players and their hands
+    self.players: Collection[Player] = [Player([self.draw_pile.pop() for _ in range(self.hand_size)]) for _ in range(self.num_players)]
+
+
+    # repeatedly check if we are drawing wilds or plus4s
+    # if we are, put them on the discard pile
+    while (initial_card := self.draw_pile.pop()).type in [Wild, PlusFour]:
+      self.discard_pile.push(initial_card)
+
+    # we now have a non wild / plus4 card
+    self.discard_pile.push(initial_card)
+    self.color = initial_card.color
+
+  def start(self):
+    while True:
+      self.play_one_turn()
+
+  def play_one_turn(self):
+    pass
+
+  def go_next_player(self) -> None:
+    self.turn = (self.turn + self.dir) % self.num_players
+
+  def go_prev_player(self) -> None:
+    self.turn = (self.turn - self.dir) % self.num_players
+
+  def reverse(self) -> None:
+    self.dir = -self.dir
+
+  def __repr__(self) -> str:
+    # include the each of the players' cards
+    # include the draw_pile
+    # include the discard_pile
+    return ''
+    
 
 
 #################################################### CARDS ####################################################
@@ -36,7 +80,6 @@ class Color(IntEnum):
   GREEN = 2
   BLUE = 3
   NUM_COLORS = 4
-
 
 class Card:
   def __init__(self, color: Optional[Color], number: Optional[int]):
@@ -58,19 +101,15 @@ class Card:
       return self.color is None and self.number is None
     else:
       return False
-  
-  def play_card(self, state: UNO) -> None:
-    # TODO: all cards add themselves to the discard pile, so this should do that
-    pass
     
-  def __eq__(self, other):
+    
+  def __eq__(self, other) -> bool:
     return isinstance(other, Card) \
            and self.type == other.type \
            and self.color == other.color \
            and self.number == other.number 
   
-  def __repr__(self):
-    # TODO: use text coloring instead of color out front 
+  def __repr__(self) -> str:
     res = ''
     res += f'{self.color.name:<8}' if self.color is not None else ''
     res += f'{self.type.__name__:<8}' if self.type != Number else ''
@@ -80,6 +119,17 @@ class Card:
 class Number(Card):
   def is_playable(self, top_card: Card, deck_color: Color) -> bool:
     return self.color == deck_color or (top_card.type == Number and top_card.number == self.number)
+  
+  def play_card(self, state: UNO) -> None:
+    # place the card on the discard pile
+    state.discard_pile.push(self)
+
+    # update the color of the deck
+    state.color = self.color
+
+    # advance to the next player
+    state.go_next_player()
+    
 
 class PlusTwo(Card):
   def __init__(self, color: Optional[Color]):
@@ -90,6 +140,23 @@ class PlusTwo(Card):
   # of the game state 
   def is_playable(self, top_card: Card, deck_color: Color) -> bool:
     return self.color == deck_color or top_card.type == PlusTwo
+  
+  def play_card(self, state: UNO) -> None:
+    # place the card on the discard pile
+    state.discard_pile.push(self)
+
+    # update the color of the deck
+    state.color = self.color
+
+    # advance to the next player
+    state.go_next_player()
+
+    # give them two cards
+    state.players[state.turn].receive_card(state.draw_pile.pop())
+    state.players[state.turn].receive_card(state.draw_pile.pop())
+
+    # go to the next player
+    state.go_next_player()
 
 class Skip(Card):
   def __init__(self, color: Optional[Color]):
@@ -97,6 +164,17 @@ class Skip(Card):
 
   def is_playable(self, top_card: Card, deck_color: Color) -> bool:
     return self.color == deck_color or top_card.type == Skip
+  
+  def play_card(self, state: UNO) -> None:
+    # place the card on the discard pile
+    state.discard_pile.push(self)
+
+    # update the color of the deck
+    state.color = self.color
+
+    # skip a player
+    state.go_next_player()
+    state.go_next_player()
 
 class Reverse(Card):
   def __init__(self, color: Optional[Color]):
@@ -104,6 +182,17 @@ class Reverse(Card):
 
   def is_playable(self, top_card: Card, deck_color: Color) -> bool:
     return self.color == deck_color or top_card.type == Reverse
+  
+  def play_card(self, state: UNO) -> None:
+    # place the card on the discard pile
+    state.discard_pile.push(self)
+
+    # update the color of the deck
+    state.color = self.color
+
+    # change direction and go back to prev player
+    state.reverse()
+    state.go_next_player()
 
 class PlusFour(Card):
   def __init__(self):
@@ -111,6 +200,63 @@ class PlusFour(Card):
 
   def is_playable(self, top_card: Card, deck_color: Color) -> bool:
     return True
+  
+  def play_card(self, state: UNO) -> None:
+    # check to see if we had other options than playing this card
+    player: Player = state.players[state.turn]
+    playable_cards: Collection[Card] = player.get_playable_cards(state.discard_pile.peek(), state.color)
+
+    # check if we have any cards that meet these conditions
+    # 1. is not a plus 4
+    # 2. matches the color of the top card or is a wild card
+    has_other_options: bool = any(map(lambda c: c.type != PlusFour and (c.type == Wild or c.color == state.color), playable_cards))
+
+    # place the card on the discard pile
+    state.discard_pile.push(self)
+
+    # ask the user for a color
+    # TODO: change this
+    color_str = f'0: RED\n1: YELLOW\n2: GREEN\n3: BLUE\n'
+    color = Color(int(input(color_str + 'Pick a color!\n')))
+    self.color = color
+
+    # go the next player
+    state.go_next_player()
+
+    # ask them for a bluff answer
+    call_bluff = state.players[state.turn].get_bluff_answer()
+
+    # we're guilty
+    if call_bluff and has_other_options:
+      # this player must show their cards to the person calling the bluff
+
+      # move back to us
+      state.go_prev_player()
+
+      # draw 4 cards
+      for _ in range(4):
+        state.players[state.turn].receive_card(state.draw_pile.pop())
+
+      # progress to the next player
+      state.go_next_player()
+    
+    # failed bluff
+    elif call_bluff and not has_other_options:
+      # this player must show their cards to the person calling the bluff
+      # draw 6 cards for this player
+      for _ in range(6):
+        state.players[state.turn].receive_card(state.draw_pile.pop())
+
+      state.go_next_player()
+
+    # no bluff called
+    else:
+      # draw 4 cards for this player
+      for _ in range(4):
+        state.players[state.turn].receive_card(state.draw_pile.pop())
+
+      state.go_next_player()
+
 
 class Wild(Card):
   def __init__(self):
@@ -118,6 +264,20 @@ class Wild(Card):
 
   def is_playable(self, top_card: Card, deck_color: Color) -> bool:
     return True
+  
+  def play_card(self, state: UNO) -> None:
+    # place the card on the discard pile
+    state.discard_pile.push(self)
+
+    # ask the user for a color
+    # TODO: change this
+    color_str = f'0: RED\n1: YELLOW\n2: GREEN\n3: BLUE\n'
+    color = Color(int(input(color_str + 'Pick a color!\n')))
+    self.color = color
+
+    # move on to the next player
+    state.go_next_player()
+
 
 
 #################################################### PLAYERS ####################################################
@@ -147,21 +307,43 @@ class Player:
     # keep hand sorted
     self._sort_hand()
 
-  # asks the player for a card
-  # they could return None if they have no card they can play
-  # TODO: are you allowed to draw even if you can play? -> Yes
+  # NOTE: this function will only ever be called when this player is actually able to play
   def get_card(self, top_card: Card, deck_color: Color) -> Optional[Card]:
-    playable_cards = list(filter(lambda c: c.is_playable(top_card, deck_color), self.hand))
+    # extracts the playable cards, including their index in the unfiltered hand (for removal)
+    enumerated_hand = enumerate(self.hand)
+    playable_cards = list(filter(lambda c: c[1].is_playable(top_card, deck_color), enumerated_hand))
     if playable_cards == []:
       return None
     
-    print('Playable Cards:')
-    print(Player._hand_to_str(playable_cards))
+    # ask them for a card
+    print('Possible actions:')
+    print(Player._hand_to_str(map(lambda x: x[1], playable_cards)) + f'\n{len(playable_cards)}: Draw card')
+
+    while (action := int(input('Enter action: '))) not in range(len(playable_cards)+1):
+      pass
+
+    # they want to draw a card
+    if action == len(playable_cards):
+      return None
     
+    i, card_to_play = playable_cards[action]
 
+    # remove this card from the hand
+    self.hand.pop(i)
 
-  def can_play(self, top_card: Card) -> bool:
-    return any(map(lambda c: c.is_playable(top_card), self.hand))
+    # keep hand sorted
+    self._sort_hand()
+
+    return card_to_play
+
+  def can_play(self, top_card: Card, deck_color: Color) -> bool:
+    return self.get_playable_cards(top_card, deck_color) == []
+  
+  def get_playable_cards(self, top_card: Card, deck_color: Color):
+    return list(filter(lambda c: c.is_playable(top_card, deck_color), self.hand))
+  
+  def get_bluff_answer(self):
+    return input('Call bluff (y/n)?') == 'y'
   
   def _sort_hand(self) -> None:
     # sort by card color, then card type, then card number
@@ -171,7 +353,7 @@ class Player:
                    c.number if c.number is not None else -1))
   
   @staticmethod
-  def _hand_to_str(hand):
+  def _hand_to_str(hand) -> str:
     return '\n'.join(map(lambda x: f'{x[0]}: {x[1]}', enumerate(hand)))
 
   def __repr__(self):
@@ -191,8 +373,24 @@ class Deck:
   PLUSFOUR_CARDS = 4
   WILD_CARDS = 4
 
+  def __init__(self, num_cards: int):
+    self.cards = [Deck.generate_card() for _ in range(num_cards)]
+
+  def push(self, card: Card) -> None:
+    self.cards.append(card)
+
+  def pop(self) -> Card:
+    return self.cards.pop()
+  
+  def peek(self) -> Card:
+    return self.cards[-1]
+  
+  def __repr__(self) -> str:
+    return f'TOP\n' + '\n'.join(map(lambda c: str(c), self.cards[::-1])) + '\nBOTTOM'
+
   # generates non-replacing cards based on distribution of UNO cards
-  def generate_card(self):
+  @staticmethod
+  def generate_card():
     # create distribution for card types 
     types = np.array([Number, PlusTwo, Skip, Reverse, PlusFour, Wild])
     types_dist = np.array([
@@ -232,15 +430,23 @@ class Deck:
     else: # number card
       return card_type(color=card_color, number=card_number)
 
+
+# TODO: will create two deck classes -> draw_deck, discard_deck
     
 if __name__ == '__main__':
-  deck = Deck()
-  hand = [deck.generate_card() for _ in range(7)]
-  player = Player(hand)
-  print(player, end='\n\n')
+  game = UNO(num_players=4)
+  # print(game.players)
+  # hand = [Deck.generate_card() for _ in range(7)]
+  # player = Player(hand)
 
-  while input('') != 'q':
-    card = deck.generate_card()
-    deck_color = card.color if card.color is not None else random.choice([Color.BLUE, Color.GREEN, Color.RED, Color.YELLOW])
-    print(f'Card: {card}, deck_color: {deck_color.name}')
-    player.get_card(card, deck_color)
+  # while True:
+  #   print(player)
+  #   card = Deck.generate_card()
+  #   deck_color = card.color if card.color is not None else random.choice([Color.BLUE, Color.GREEN, Color.RED, Color.YELLOW])
+  #   print(f'Card: {card}, deck_color: {deck_color.name}')
+  #   played_card = player.get_card(card, deck_color)
+
+  #   if played_card is None:
+  #     player.receive_card(Deck.generate_card())
+    
+  #   print()
