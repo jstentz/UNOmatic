@@ -45,15 +45,44 @@ class UNO:
       self.discard_pile.push(initial_card)
 
     # we now have a non wild / plus4 card
-    self.discard_pile.push(initial_card)
-    self.color = initial_card.color
+    # play this card
+    initial_card.play_card(self)
+    
 
   def start(self):
-    while True:
+    # continue the game while everyone still has at least one card
+    while all(map(lambda p: p.hand != [], self.players)):
+      # print the board
+      print(f'Player {self.turn}\'s turn')
+      print(f'Your hand:\n{self.players[self.turn].hand}')
+      print(f'Top card: {self.discard_pile.peek()}')
+      print(f'{len(self.draw_pile.cards)} cards remaining.\n\n')
+
+      # do one turn
       self.play_one_turn()
 
+      print('\n\n')
+    
+    # TODO: print game over 
+    print('Game over!')
+
   def play_one_turn(self):
-    pass
+    # ask the player for a card
+    curr_player: Player = self.players[self.turn]
+    selected_card: Optional[Card] = curr_player.get_card(self.discard_pile.peek(), self.color)
+
+    # if they give a card back, play it
+    if selected_card is not None:
+      selected_card.play_card(self)
+    # otherwise, they should draw a card
+    else:
+      drawn_card = self.draw_pile.pop()
+      print(f'Drawn card: {drawn_card}')
+      # ask them if they want to play
+      if drawn_card.is_playable(self.discard_pile.peek(), self.color) and input('Call bluff (y/n)?') == 'y':
+        drawn_card.play_card(self)
+      else:
+        curr_player.receive_card(drawn_card)
 
   def go_next_player(self) -> None:
     self.turn = (self.turn + self.dir) % self.num_players
@@ -102,7 +131,14 @@ class Card:
     else:
       return False
     
-    
+  # this is just here so any instance of a Card has this method 
+  def play_card(self, state: UNO) -> None:
+    pass 
+
+  # this is just here so any instance of a Card has this method 
+  def is_playable(self, top_card, deck_color: Color) -> bool:
+    pass
+  
   def __eq__(self, other) -> bool:
     return isinstance(other, Card) \
            and self.type == other.type \
@@ -218,7 +254,7 @@ class PlusFour(Card):
     # TODO: change this
     color_str = f'0: RED\n1: YELLOW\n2: GREEN\n3: BLUE\n'
     color = Color(int(input(color_str + 'Pick a color!\n')))
-    self.color = color
+    state.color = color
 
     # go the next player
     state.go_next_player()
@@ -273,7 +309,7 @@ class Wild(Card):
     # TODO: change this
     color_str = f'0: RED\n1: YELLOW\n2: GREEN\n3: BLUE\n'
     color = Color(int(input(color_str + 'Pick a color!\n')))
-    self.color = color
+    state.color = color
 
     # move on to the next player
     state.go_next_player()
@@ -435,18 +471,4 @@ class Deck:
     
 if __name__ == '__main__':
   game = UNO(num_players=4)
-  # print(game.players)
-  # hand = [Deck.generate_card() for _ in range(7)]
-  # player = Player(hand)
-
-  # while True:
-  #   print(player)
-  #   card = Deck.generate_card()
-  #   deck_color = card.color if card.color is not None else random.choice([Color.BLUE, Color.GREEN, Color.RED, Color.YELLOW])
-  #   print(f'Card: {card}, deck_color: {deck_color.name}')
-  #   played_card = player.get_card(card, deck_color)
-
-  #   if played_card is None:
-  #     player.receive_card(Deck.generate_card())
-    
-  #   print()
+  game.start()
