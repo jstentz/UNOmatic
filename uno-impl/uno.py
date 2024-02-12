@@ -1,26 +1,18 @@
 '''
-state:
- * number of players
- * who's turn it is
- * the cards that a player has 
- * draw_pile -> I won't know this, which is completely fine
-  * I'll just have to have them pass in a card that is being dispensed from the draw_pile
- * discard_pile 
-  * you actually only need the top card of this, but let's just store the whole deck 
- * 
-
-Official uno rules: https://service.mattel.com/instruction_sheets/42001pr.pdf
-
+References:
+ * Official uno rules -> https://service.mattel.com/instruction_sheets/42001pr.pdf
 '''
 
 from typing import Collection, Optional
 from enum import IntEnum
 import numpy as np # for now this is just used for weighted sampling
-import random
 
 #################################################### GAME STATE ####################################################
 
 # TODO: I could have some notion of a Hand class, but that might be overkill... it would have printing, adding, getting playable cards, etc
+# NOTE: I think the main thing to separate from this file would be the Player class. That will likely be where all of the IO interfaces are,
+# since all physical actions with the machine go to / from the Player.
+# TODO: add better printing for player hands
 
 class UNO:
   def __init__(self, num_players: int, hand_size: int = 7):
@@ -47,11 +39,15 @@ class UNO:
     # we now have a non wild / plus4 card
     # play this card
     initial_card.play_card(self)
+
+  def is_game_over(self):
+    return any(map(lambda p: p.hand == [], self.players))
     
 
   def start(self):
     # continue the game while everyone still has at least one card
-    while all(map(lambda p: p.hand != [], self.players)):
+
+    while not self.is_game_over():
       # print the board
       print(f'Player {self.turn}\'s turn')
       print(f'Your hand:\n{self.players[self.turn].hand}')
@@ -99,8 +95,6 @@ class UNO:
     # include the discard_pile
     return ''
     
-
-
 #################################################### CARDS ####################################################
 
 class Color(IntEnum):
