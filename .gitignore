@@ -1,6 +1,6 @@
+requirements.txt
+*.zip
 .venv
-# TODO: set it up so there is a zip file of the data push to git
 UNO-dataset/
-# TODO: include a zip file of the data in the repo
 data/
 wandb/

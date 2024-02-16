@@ -4,4 +4,4 @@ numpy
 opencv-python
 pandas
 wandb
-smbus2
+pyserial
