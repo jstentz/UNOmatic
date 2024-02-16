@@ -1,20 +1,13 @@
-#include <Wire.h>
-
 void setup() {
-  int addr = 0x8;
-  Wire.begin(addr);
-  Wire.onReceive(receiveEvent);
-
+  Serial.begin(9600);
 }
 
-void receiveEvent(int howMany) {
-  while (Wire.available()) { // loop through all but the last
-    char c = Wire.read(); // receive byte as a character
-    digitalWrite(ledPin, c);
-  }
-}
 
 void loop() {
-  delay(1000);
-
+  if (Serial.available() > 0) {
+    String data = Serial.readStringUntil('\n');
+    Serial.print("echo: ");
+    Serial.println(data);
+  }
+  delay(100);
 }
