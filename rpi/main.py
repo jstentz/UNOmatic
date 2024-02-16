@@ -12,24 +12,26 @@ def cam_init():
     picam2.start(show_preview=True)
     return picam2, config
 
-def get_line():
+def get_line(ser):
     while True:
-        line = serial.readline().decode('utf-8').strip()
-        if line != "":
+        if ser.in_waiting > 0:
+            line = ser.readline().decode("ascii").strip()
             return line
 
 
 def main():
-    # ser = uart_init()
+    ser = uart_init()
     picam2, config = cam_init()
     while True:
         cmd = input(">> ")
         if cmd == "q":
             break
-        picam2.switch_mode_and_capture_file(config, "image.jpg")
-        # ser.write(b'hello')
-        # line = get_line():
-        # print(line)
+        # picam2.switch_mode_and_capture_file(config, "image.jpg")
+        data = cmd + "\n"
+        data = data.encode("ascii")
+        ser.write(data)
+        line = get_line(ser)
+        print(line)
             
         
 
