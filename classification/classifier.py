@@ -108,10 +108,10 @@ class ConvNetwork(nn.Module):
 
     self.flat = nn.Flatten()
 
-    self.fc3 = nn.Linear(524288, 512)
+    self.fc3 = nn.Linear(32768, 512)
     self.act3 = nn.ReLU()
 
-    self.fc4 = nn.Linear(512, 10)
+    self.fc4 = nn.Linear(512, num_labels)
 
   def forward(self, x):
     # input 3x32x32, output 32x32x32
@@ -176,6 +176,16 @@ def evaluate(dataloader, dataname, model, loss_fn, is_last_epoch):
       avg_loss += loss_fn(pred, y).item()
       correct += (pred.argmax(1) == y).type(torch.float).sum().item()
 
+      incorrect_loc = torch.where(pred.argmax(1) != y)
+
+      if is_last_epoch and incorrect_loc[0].size(dim=0) > 0:
+        images = []
+        for image in X[incorrect_loc]:
+          images.append(wandb.Image(image))
+        wandb.log({f'incorrect_examples_{dataname}': images})
+          
+
+
       # log some example images
       # if batch == 0 and is_last_epoch:
       #   preds = [label_to_name(l) for l in pred.argmax(1)]
@@ -195,8 +205,8 @@ def main(n_epochs, batch_size, learning_rate):
   print(f"Using {device} device")
   train_dataloader, test_dataloader, val_dataloader = get_data(batch_size)
   
-  model = NeuralNetwork().to(device)
-  # model = ConvNetwork().to(device)
+  # model = NeuralNetwork().to(device)
+  model = ConvNetwork().to(device)
   print(model)
   loss_fn = nn.CrossEntropyLoss()
   optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
@@ -236,18 +246,18 @@ if __name__ == '__main__':
 
   args = parser.parse_args()
 
-  # wandb.login()
+  wandb.login()
 
-  # run = wandb.init(
-  #   # Set the project where this run will be logged
-  #   project='capstone',
-  #   # Track hyperparameters and run metadata
-  #   config={
-  #     'learning_rate': args.learning_rate,
-  #     'batch_size': args.batch_size,
-  #     'epochs': args.n_epochs,
-  #   },
-  # )
+  run = wandb.init(
+    # Set the project where this run will be logged
+    project='capstone',
+    # Track hyperparameters and run metadata
+    config={
+      'learning_rate': args.learning_rate,
+      'batch_size': args.batch_size,
+      'epochs': args.n_epochs,
+    },
+  )
 
       
   main(args.n_epochs, args.batch_size, args.learning_rate)
