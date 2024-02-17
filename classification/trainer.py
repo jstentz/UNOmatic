@@ -99,19 +99,34 @@ class NeuralNetwork(nn.Module):
 class ConvNetwork(nn.Module):
   def __init__(self):
     super().__init__()
-    self.conv1 = nn.Conv2d(3, 16, kernel_size=(3,3), stride=1, padding=1)
+
+    # params
+    self.num_filters1 = 16
+    self.num_filters2 = 32
+    self.linear_dims = 512
+
+
+    # image_size x image_size x 3
+    self.conv1 = nn.Conv2d(3, self.num_filters1, kernel_size=(3,3), stride=1, padding=1)
+
+    # image_size x image_size x 16
     self.act1 = nn.ReLU()
 
-    self.conv2 = nn.Conv2d(16, 32, kernel_size=(3,3), stride=1, padding=1)
+    # image_size x image_size x 16
+    self.conv2 = nn.Conv2d(self.num_filters1, self.num_filters2, kernel_size=(3,3), stride=1, padding=1)
+    
+    # image_size x image_size x 32
     self.act2 = nn.ReLU()
-    self.pool2 = nn.MaxPool2d(kernel_size=(2, 2))
 
+    
+    self.pool2 = nn.MaxPool2d(kernel_size=(2, 2), stride=2)
+
+    # image_size / 2 x image_size / 2 x 32
     self.flat = nn.Flatten()
-
-    self.fc3 = nn.Linear(32768, 512)
+    self.fc3 = nn.Linear((img_size[0] // 2) * (img_size[1] // 2)  * self.num_filters2, self.linear_dims)
     self.act3 = nn.ReLU()
 
-    self.fc4 = nn.Linear(512, num_labels)
+    self.fc4 = nn.Linear(self.linear_dims, num_labels)
 
   def forward(self, x):
     # input 3x32x32, output 32x32x32
@@ -176,16 +191,13 @@ def evaluate(dataloader, dataname, model, loss_fn, is_last_epoch):
       avg_loss += loss_fn(pred, y).item()
       correct += (pred.argmax(1) == y).type(torch.float).sum().item()
 
-      incorrect_loc = torch.where(pred.argmax(1) != y)
-
-      if is_last_epoch and incorrect_loc[0].size(dim=0) > 0:
-        images = []
-        for image in X[incorrect_loc]:
-          images.append(wandb.Image(image))
-        wandb.log({f'incorrect_examples_{dataname}': images})
+      # incorrect_loc = torch.where(pred.argmax(1) != y)
+      # if is_last_epoch and incorrect_loc[0].size(dim=0) > 0:
+      #   images = []
+      #   for image in X[incorrect_loc]:
+      #     images.append(wandb.Image(image))
+      #   wandb.log({f'incorrect_examples_{dataname}': images})
           
-
-
       # log some example images
       # if batch == 0 and is_last_epoch:
       #   preds = [label_to_name(l) for l in pred.argmax(1)]
@@ -221,13 +233,13 @@ def main(n_epochs, batch_size, learning_rate):
     val_loss, val_acc = evaluate(val_dataloader, "Val", model, loss_fn, t == n_epochs - 1)
 
     # don't need to log the epoch number since that should just happen automatically with step
-    # wandb.log({'train_loss': train_loss, 
-    #             'train_acc': train_acc, 
-    #             'test_loss': test_loss, 
-    #             'test_acc': test_acc,
-    #             'val_loss': val_loss,
-    #             'val_acc': val_acc,
-    #             'epoch': t})
+    wandb.log({'train_loss': train_loss, 
+                'train_acc': train_acc, 
+                'test_loss': test_loss, 
+                'test_acc': test_acc,
+                'val_loss': val_loss,
+                'val_acc': val_acc,
+                'epoch': t})
   print("Done!")
 
   # Save the model
@@ -235,8 +247,8 @@ def main(n_epochs, batch_size, learning_rate):
   print("Saved PyTorch Model State to model.pth")
 
   # Load the model (just for the sake of example)
-  model = NeuralNetwork().to(device)
-  model.load_state_dict(torch.load("model.pth"))
+  # model = NeuralNetwork().to(device)
+  # model.load_state_dict(torch.load("model.pth"))
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description = 'UNO Card Classifier')
