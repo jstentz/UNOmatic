@@ -7,7 +7,7 @@ def uart_init():
     return ser
 
 def cam_init():
-    picam2 = Picamera2()
+    picam2 = Picamera2(0)
     config = picam2.create_still_configuration({"size": (1280, 720)})
     picam2.start(show_preview=True)
     return picam2, config
