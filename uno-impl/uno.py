@@ -30,7 +30,6 @@ class UNO:
     # generate players and their hands
     self.players: Collection[Player] = [Player([self.draw_pile.pop() for _ in range(self.hand_size)]) for _ in range(self.num_players)]
 
-
     # repeatedly check if we are drawing wilds or plus4s
     # if we are, put them on the discard pile
     while (initial_card := self.draw_pile.pop()).type in [Wild, PlusFour]:
@@ -43,7 +42,6 @@ class UNO:
   def is_game_over(self):
     return any(map(lambda p: p.hand == [], self.players))
     
-
   def start(self):
     # continue the game while everyone still has at least one card
 
@@ -307,7 +305,6 @@ class Wild(Card):
 
     # move on to the next player
     state.go_next_player()
-
 
 
 #################################################### PLAYERS ####################################################
