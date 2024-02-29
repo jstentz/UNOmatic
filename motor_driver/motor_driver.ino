@@ -40,13 +40,24 @@ void loop() {
       delay(500);
       servo.write(90);
       servo.detach();
+
       dcMotor->run(FORWARD);
       delay(750);
       dcMotor->run(RELEASE);
+
+      servo.attach(10);
+      servo.write(180);
+      delay(100);
+      servo.write(90);
+      servo.detach();
+
     } else if (cmd == 'r') { // rotate 
       stepperMotor->step(value, FORWARD, DOUBLE);
       stepperMotor->release();
     }
     Serial.println("done");
   }
+  // stepperMotor->step(200, FORWARD, DOUBLE);
+  // stepperMotor->release();
+  delay(1000);
 }

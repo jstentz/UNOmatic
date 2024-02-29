@@ -36,21 +36,16 @@ def add_card(card):
     pass
 
 def rotate(ser, angle):
-    ser.write(f'r: {angle}')
-    while True:
-        if ser.in_waiting > 0:
-            return
-        time.sleep(0.1)
+    steps = 200*angle//360
+    ser.write(f'r{steps}')
+    get_line(ser)
 
 def deal(ser, cam, num_deal):
     images = []
     for _ in range(num_deal):
         images.append(cam.capture_array())
         ser.write(f'd')
-        while True:
-            if ser.in_waiting > 0:
-                break
-            time.sleep(0.1)
+        get_line(ser)
     return images
             
 def event_loop():
