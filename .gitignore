@@ -4,3 +4,5 @@ requirements.txt
 UNO-dataset/
 data/
 wandb/
+*.pth
+__pycache__/
