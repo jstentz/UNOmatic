@@ -20,19 +20,16 @@ void setup() {
     Serial.println("Could not find Motor Shield. Check wiring.");
     while (1);
   }
-  Serial.println("Motor Shield found.");
   stepperMotor->release();
   stepperMotor->setSpeed(70);
-  dcMotor->setSpeed(255);
   dcMotor->run(RELEASE);
+  dcMotor->setSpeed(255);
 }
 
 void loop() {
   if (Serial.available() > 0) {
     char cmd = Serial.read();
     String data = Serial.readStringUntil('\n');
-    Serial.println(cmd);
-    Serial.println(data);
     int value = data.toInt();
     if (cmd == 'd') { // deal
       servo.attach(10);  // attaches the servo on pin 10 to the servo object
@@ -57,7 +54,4 @@ void loop() {
     }
     Serial.println("done");
   }
-  // stepperMotor->step(200, FORWARD, DOUBLE);
-  // stepperMotor->release();
-  delay(1000);
 }
