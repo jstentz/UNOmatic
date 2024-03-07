@@ -37,14 +37,14 @@ def add_card(card):
 
 def rotate(ser, angle):
     steps = 200*angle//360
-    ser.write(f'r{steps}')
+    ser.write(f'r{steps}\n'.encode("ascii"))
     get_line(ser)
 
 def deal(ser, cam, num_deal):
     images = []
     for _ in range(num_deal):
         images.append(cam.capture_array())
-        ser.write(f'd')
+        ser.write("d\n".encode("ascii"))
         get_line(ser)
     return images
             
@@ -70,17 +70,22 @@ def event_loop():
 
 def main():
     ser = uart_init()
-    cam = cam_init(0, (540, 360))
+    cam_top = cam_init(0, (360, 360))
+    cam_bot = cam_init(1, (360, 360))
+    top_cnt = 0
     while True:
         cmd = input(">> ")
         if cmd == "q":
             break
-        cam.capture_file("image.jpg")
-        data = cmd + "\n"
-        data = data.encode("ascii")
-        ser.write(data)
-        line = get_line(ser)
-        print(line)
+        if cmd == "t":
+            cam_top.capture_file(f'top_{top_cnt}.jpg')
+            top_cnt += 1
+        else:
+            num_images = int(cmd)
+            for i in range(num_images):
+                cam_bot.capture_file(f'bot_{i}.jpg')
+                ser.write("d\n".encode("ascii"))
+                get_line(ser)
 
 if __name__ == "__main__":
     main()
