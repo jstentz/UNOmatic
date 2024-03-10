@@ -52,14 +52,6 @@ class Controller:
   def deal_card(self) -> Card:
     pass
 
-  # show what the game state looks like
-  def display_state(self, state: UNO) -> None:
-    pass
-
-  # signal that we have entered an invalid state
-  def signal_invalid_state(self) -> None:
-    pass
-
 
 # Handles game state interactions through the terminal
 class TerminalController(Controller):
@@ -103,20 +95,6 @@ class TerminalController(Controller):
   # here, I guess the software controller will have to maintain it's own draw deck in the controller
   def deal_card(self) -> Card:
     return self.draw_pile.pop()
-
-  # show what the game state looks like
-  def display_state(self, state: UNO) -> None:
-    top_card = state.discard_pile.peek()
-    color = state.color
-
-    if type(top_card) in [Wild, PlusFour]:
-      print(f'Top card: {top_card}, Color: {color.name}')
-    else:
-      print(f'Top card: {top_card}')
-  
-  def signal_invalid_state(self) -> None:
-    print('The board has entered an invalid state. Exiting...')
-    exit(1)
 
 
 # Handles game state interactions through a visual interface 

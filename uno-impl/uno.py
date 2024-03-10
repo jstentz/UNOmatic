@@ -13,7 +13,9 @@ from deck import Deck
 from card import Color
 from card import Card, Wild, PlusFour
 from player import Player
-from controller import Controller, TerminalController
+from manager import Manager
+from controller import TerminalController
+from displayer import TerminalDisplayer
 
 '''
 Note: the uno state no longer manages the draw_pile, this is handled by the controller
@@ -27,27 +29,27 @@ need to add state validation (any time someone makes a move)
 '''
 
 class UNO:
-  def __init__(self, num_players: int, hand_size: int = 7, controller: Optional[Controller] = None):
+  def __init__(self, manager: Manager, num_players: int, hand_size: int = 7):
     self.num_players: int = num_players
     self.hand_size: int = hand_size
     
     # set up the controller (terminal is default)
-    self.controller = controller if controller is not None else TerminalController()
+    self.manager = manager
     self.reset()
     
   def reset(self):
-    self.controller.reset()
+    self.manager.reset()
     self.discard_pile: Deck = Deck(0)
     self.color: Optional[Color] = None # this is extra info for when the top card is wild or plus4
     self.turn: int = 0 # stores the index of the current player's turn
     self.dir: int = +1 # stores which direction the game is moving in 
 
     # generate players and their hands
-    self.players: Collection[Player] = [Player([self.controller.deal_card() for _ in range(self.hand_size)], pos) for pos in range(self.num_players)]
+    self.players: Collection[Player] = [Player([self.manager.deal_card() for _ in range(self.hand_size)], pos) for pos in range(self.num_players)]
 
     # repeatedly check if we are drawing wilds or plus4s
     # if we are, put them on the discard pile
-    while (initial_card := self.controller.deal_card()).type in [Wild, PlusFour]:
+    while (initial_card := self.manager.deal_card()).type in [Wild, PlusFour]:
       self.discard_pile.push(initial_card)
 
     # we now have a non wild / plus4 card
@@ -61,13 +63,13 @@ class UNO:
     # continue the game while everyone still has at least one card
     while not self.is_game_over():
     
-      self.controller.display_state(self)
+      self.manager.display_state(self)
 
       # do one turn
       self.play_one_turn()
 
     # display the final game state
-    self.controller.display_state(self)    
+    self.manager.display_state(self)    
 
   def play_one_turn(self):
     # ask the player for a card
@@ -76,10 +78,10 @@ class UNO:
     # TODO: this part will be different, since now I have to get it from the model
     # selected_card: Optional[Card] = curr_player.get_card(self.discard_pile.peek(), self.color)
 
-    selected_card = self.controller.get_card(curr_player)
+    selected_card = self.manager.get_card(curr_player)
 
     if selected_card is not None and selected_card not in curr_player.get_playable_cards(self.discard_pile.peek(), self.color):
-      self.controller.signal_invalid_state()
+      self.manager.signal_invalid_state()
 
 
     
@@ -96,11 +98,11 @@ class UNO:
       
     # otherwise, they should draw a card
     else:
-      drawn_card = self.controller.deal_card()
+      drawn_card = self.manager.deal_card()
       print(f'Drawn card: {drawn_card}')
       # ask them if they want to play
       if drawn_card.is_playable(self.discard_pile.peek(), self.color) \
-         and self.controller.get_draw_card_response(curr_player, drawn_card):
+         and self.manager.get_draw_card_response(curr_player, drawn_card):
         # play the card
         drawn_card.play_card(self)
       else:
@@ -111,11 +113,11 @@ class UNO:
         self.go_next_player()
 
   def go_next_player(self) -> None:
-    self.controller.advance_turn(self.dir)
+    self.manager.advance_turn(self.dir)
     self.turn = (self.turn + self.dir) % self.num_players
 
   def go_prev_player(self) -> None:
-    self.controller.advance_turn(-self.dir)
+    self.manager.advance_turn(-self.dir)
     self.turn = (self.turn - self.dir) % self.num_players
 
   def reverse(self) -> None:
@@ -137,5 +139,8 @@ that have happened. At the end of a turn, the UNO state will process all of thes
 # TODO: will create two deck classes -> draw_deck, discard_deck
     
 if __name__ == '__main__':
-  game = UNO(num_players=2)
+  controller = TerminalController()
+  displayer = TerminalDisplayer()
+  manager = Manager(controller, [displayer])
+  game = UNO(manager=manager, num_players=2)
   game.start()
