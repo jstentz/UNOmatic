@@ -97,8 +97,8 @@ class PlusTwo(Card):
     state.go_next_player()
 
     # give them two cards
-    state.players[state.turn].receive_card(state.controller.deal_card())
-    state.players[state.turn].receive_card(state.controller.deal_card())
+    state.players[state.turn].receive_card(state.manager.deal_card())
+    state.players[state.turn].receive_card(state.manager.deal_card())
 
     # go to the next player
     state.go_next_player()
@@ -160,13 +160,13 @@ class PlusFour(Card):
     state.discard_pile.push(self)
 
     # ask the user for a color
-    state.color = state.controller.get_color_choice(player)
+    state.color = state.manager.get_color_choice(player)
 
     # go the next player
     state.go_next_player()
 
     # ask them for a bluff answer
-    call_bluff = state.controller.get_bluff_answer(player)
+    call_bluff = state.manager.get_bluff_answer(player)
 
     # we're guilty
     if call_bluff and has_other_options:
@@ -177,7 +177,7 @@ class PlusFour(Card):
 
       # draw 4 cards
       for _ in range(4):
-        state.players[state.turn].receive_card(state.controller.deal_card())
+        state.players[state.turn].receive_card(state.manager.deal_card())
 
       # progress to the next player
       state.go_next_player()
@@ -187,7 +187,7 @@ class PlusFour(Card):
       # this player must show their cards to the person calling the bluff
       # draw 6 cards for this player
       for _ in range(6):
-        state.players[state.turn].receive_card(state.controller.deal_card())
+        state.players[state.turn].receive_card(state.manager.deal_card())
 
       state.go_next_player()
 
@@ -195,7 +195,7 @@ class PlusFour(Card):
     else:
       # draw 4 cards for this player
       for _ in range(4):
-        state.players[state.turn].receive_card(state.controller.deal_card())
+        state.players[state.turn].receive_card(state.manager.deal_card())
 
       state.go_next_player()
 
@@ -212,7 +212,7 @@ class Wild(Card):
     state.discard_pile.push(self)
 
     # ask the user for a color
-    state.color = state.controller.get_color_choice(state.players[state.turn])
+    state.color = state.manager.get_color_choice(state.players[state.turn])
 
     # move on to the next player
     state.go_next_player()

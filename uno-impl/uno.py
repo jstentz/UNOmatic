@@ -15,7 +15,7 @@ from card import Card, Wild, PlusFour
 from player import Player
 from manager import Manager
 from controller import TerminalController
-from displayer import TerminalDisplayer
+from displayer import TerminalDisplayer, TkDisplayer
 
 '''
 Note: the uno state no longer manages the draw_pile, this is handled by the controller
@@ -84,8 +84,6 @@ class UNO:
       self.manager.signal_invalid_state()
 
 
-    
-
     # if they give a card back, play it
     if selected_card is not None:
       selected_card.play_card(self)
@@ -140,7 +138,8 @@ that have happened. At the end of a turn, the UNO state will process all of thes
     
 if __name__ == '__main__':
   controller = TerminalController()
-  displayer = TerminalDisplayer()
-  manager = Manager(controller, [displayer])
+  terminal_displayer = TerminalDisplayer()
+  tk_displayer = TkDisplayer()
+  manager = Manager(controller, [terminal_displayer, tk_displayer])
   game = UNO(manager=manager, num_players=2)
   game.start()
