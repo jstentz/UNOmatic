@@ -4,3 +4,8 @@ requirements.txt
 UNO-dataset/
 data/
 wandb/
+<<<<<<< HEAD
+=======
+*.pth
+__pycache__/
+>>>>>>> uno-update
