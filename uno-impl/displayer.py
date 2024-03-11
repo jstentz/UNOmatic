@@ -117,7 +117,7 @@ class TkDisplayer(Displayer):
     top_card = state.discard_pile.peek()
     if top_card is not None:
       self._draw_card(top_card, self.width/2 - self.card_width/2, 1/12 * self.height)
-      self.canvas.create_text(self.width / 2, 1/12 * self.height - 30, text='Top Card', font=('Purisa Bold', 20))
+      self.canvas.create_text(self.width / 2, 1/12 * self.height - 30, text='Top Card', font=('Purisa Bold', 20), fill=state.color.name)
     
   def signal_invalid_state(self) -> None:
     print('The board has entered an invalid state. Exiting...')
