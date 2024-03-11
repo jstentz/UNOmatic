@@ -166,7 +166,9 @@ class PlusFour(Card):
     state.go_next_player()
 
     # ask them for a bluff answer
-    call_bluff = state.manager.get_bluff_answer(player)
+    next_player = state.players[state.turn]
+    call_bluff = state.manager.get_bluff_answer(next_player)
+
 
     # we're guilty
     if call_bluff and has_other_options:

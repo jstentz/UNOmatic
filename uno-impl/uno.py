@@ -141,5 +141,5 @@ if __name__ == '__main__':
   terminal_displayer = TerminalDisplayer()
   tk_displayer = TkDisplayer()
   manager = Manager(controller, [terminal_displayer, tk_displayer])
-  game = UNO(manager=manager, num_players=2)
+  game = UNO(manager=manager, num_players=4)
   game.start()
