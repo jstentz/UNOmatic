@@ -12,7 +12,7 @@ def cam_init(n, res):
     cam = Picamera2(n)
     config = cam.create_still_configuration({"size": res})
     cam.configure(config)
-    cam.start(show_preview=True)
+    cam.start(show_preview=False)
     return cam
 
 
@@ -69,23 +69,23 @@ def event_loop():
             add_card(card)
 
 def main():
-    ser = uart_init()
+    # ser = uart_init()
     cam_top = cam_init(0, (360, 360))
-    cam_bot = cam_init(1, (360, 360))
-    top_cnt = 0
+    # cam_bot = cam_init(1, (360, 360))
+    top_cnt = 114
     while True:
         cmd = input(">> ")
         if cmd == "q":
             break
-        if cmd == "t":
-            cam_top.capture_file(f'top_{top_cnt}.jpg')
-            top_cnt += 1
-        else:
-            num_images = int(cmd)
-            for i in range(num_images):
-                cam_bot.capture_file(f'bot_{i}.jpg')
-                ser.write("d\n".encode("ascii"))
-                get_line(ser)
+        # if cmd == "t":
+        cam_top.capture_file(f'top_data/top_{top_cnt}.jpg')
+        top_cnt += 1
+        # else:
+        #     num_images = int(cmd)
+        #     for i in range(num_images):
+        #         cam_bot.capture_file(f'bot_{i}.jpg')
+        #         ser.write("d\n".encode("ascii"))
+        #         get_line(ser)
 
 if __name__ == "__main__":
     main()
