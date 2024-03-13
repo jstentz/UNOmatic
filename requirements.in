@@ -5,3 +5,5 @@ opencv-python
 pandas
 wandb
 pyserial
+matplotlib
+scikit-learn
