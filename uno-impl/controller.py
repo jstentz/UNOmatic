@@ -7,6 +7,7 @@ from queue import Queue
 from card import Card, Wild, PlusFour, Color
 from deck import Deck
 from player import Player
+from displayer import TkDisplayer
 
 # only import what we need if we are doing type checking
 from typing import TYPE_CHECKING
@@ -78,16 +79,8 @@ class TerminalController(Controller):
     print(player.name + ' actions:')
     print(Player._hand_to_str(map(lambda x: x[1], enumerated_hand)) + f'\n{len(enumerated_hand)}: Draw card')
 
-    while True:
-      # while (action := int(input('Enter action: '))) not in range(len(enumerated_hand)+1):
-      #   pass
-
-      action = int(input('Enter action: '))
-
-      if action == 69:
-        super()._send_to_state('OMG!!!!! Async stuff!!!!')
-      else:
-        break
+    while (action := int(input('Enter action: '))) not in range(len(enumerated_hand)+1):
+      pass
 
     # they want to draw a card
     if action == len(player.hand):
@@ -117,11 +110,35 @@ class TerminalController(Controller):
 
 # Handles game state interactions through a visual interface 
 class GUIController(Controller):
-  def __init__(self):
+
+  # take in the displayer to be able to easily work with the same windows and such
+  def __init__(self, displayer: TkDisplayer):
     super().__init__()
 
+    self.displayer = displayer
+    self.reset()
 
-# print(f'Player {self.turn}\'s turn')
-# print(f'Your hand:\n{self.players[self.turn].hand}')
-# print(f'Top card: {self.discard_pile.peek()}')
-# print(f'{len(self.draw_pile.cards)} cards remaining.\n\n')
+  def reset(self) -> None:
+    # TODO: make this a real shuffled deck with random.shuffle
+    self.draw_pile: Deck = Deck(Deck.TOTAL_CARDS)
+
+  # TODO: should get_card have knowledge of the player's cards? I guess why not?
+  def get_card(self, player: Player) -> Optional[Card]:
+    
+    pass
+  
+  def get_draw_card_response(self, player: Player, card: Card) -> bool:
+    pass
+
+  def get_bluff_answer(self, player: Player) -> bool:
+    pass
+
+  def get_color_choice(self, player: Player) -> Color:
+    pass
+
+  def advance_turn(self, dir: int) -> None:
+    pass
+
+  # here, I guess the software controller will have to maintain it's own draw deck in the controller
+  def deal_card(self) -> Card:
+    return self.draw_pile.pop()
