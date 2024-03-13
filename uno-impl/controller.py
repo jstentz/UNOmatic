@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import Optional
+from queue import Queue
 
 from card import Card, Wild, PlusFour, Color
 from deck import Deck
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
 class Controller:
   
   def __init__(self):
-    pass
+    self._async_action_queue = Queue()
 
   # reset any instantiated objects
   def reset(self) -> None:
@@ -51,11 +52,20 @@ class Controller:
   # here, I guess the software controller will have to maintain it's own draw deck in the controller
   def deal_card(self) -> Card:
     pass
-
+  
+  # gives the channel used for communication
+  def get_channel(self) -> Queue:
+    return self._async_action_queue
+  
+  # TODO: type this action
+  def _send_to_state(self, action) -> None:
+    # puts action on the queue and waits until the state takes it off the queue
+    self._async_action_queue.put(action)
 
 # Handles game state interactions through the terminal
 class TerminalController(Controller):
   def __init__(self):
+    super().__init__()
     self.reset()
 
   def reset(self) -> None:
@@ -68,8 +78,16 @@ class TerminalController(Controller):
     print(player.name + ' actions:')
     print(Player._hand_to_str(map(lambda x: x[1], enumerated_hand)) + f'\n{len(enumerated_hand)}: Draw card')
 
-    while (action := int(input('Enter action: '))) not in range(len(enumerated_hand)+1):
-      pass
+    while True:
+      # while (action := int(input('Enter action: '))) not in range(len(enumerated_hand)+1):
+      #   pass
+
+      action = int(input('Enter action: '))
+
+      if action == 69:
+        super()._send_to_state('OMG!!!!! Async stuff!!!!')
+      else:
+        break
 
     # they want to draw a card
     if action == len(player.hand):
@@ -100,7 +118,7 @@ class TerminalController(Controller):
 # Handles game state interactions through a visual interface 
 class GUIController(Controller):
   def __init__(self):
-    pass
+    super().__init__()
 
 
 # print(f'Player {self.turn}\'s turn')
