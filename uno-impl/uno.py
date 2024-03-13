@@ -7,7 +7,8 @@ References:
 from __future__ import annotations
 
 from typing import Collection, Optional
-from enum import IntEnum
+from queue import Queue # used for golang-style channels
+from threading import Thread
 
 from deck import Deck
 from card import Color
@@ -17,21 +18,14 @@ from manager import Manager
 from controller import TerminalController
 from displayer import TerminalDisplayer, TkDisplayer
 
-'''
-Note: the uno state no longer manages the draw_pile, this is handled by the controller
-
-ugh it really feels like the display should be separated from the controller (this will likely be good for the website)
-
-
-other note: all of the validation should be done in the UNO class, not inside the controller
-
-need to add state validation (any time someone makes a move)
-'''
-
 class UNO:
   def __init__(self, manager: Manager, num_players: int, hand_size: int = 7):
     self.num_players: int = num_players
     self.hand_size: int = hand_size
+    self._async_action_queue = manager.controller.get_channel()
+    self._async_thread = Thread(target=self._action_handler)
+    self._async_thread.daemon = True # kill the thread when the process dies
+    self._async_thread.start()
     
     # set up the controller (terminal is default)
     self.manager = manager
@@ -39,6 +33,11 @@ class UNO:
     
   def reset(self):
     self.manager.reset()
+
+    # empty the action queue
+    while not self._async_action_queue.empty():
+      self._async_action_queue.get_nowait()
+
     self.discard_pile: Deck = Deck(0)
     self.color: Optional[Color] = None # this is extra info for when the top card is wild or plus4
     self.turn: int = 0 # stores the index of the current player's turn
@@ -110,6 +109,14 @@ class UNO:
         # advance the turn
         self.go_next_player()
 
+  def _action_handler(self) -> None:
+    # while not self.is_game_over():
+    while True:
+      # grab an action (blocks until something is on the queue)
+      action = self._async_action_queue.get()
+      print(action)
+  
+
   def go_next_player(self) -> None:
     self.manager.advance_turn(self.dir)
     self.turn = (self.turn + self.dir) % self.num_players
@@ -123,23 +130,11 @@ class UNO:
 
   def __repr__(self) -> str:
     return ''
-    
 
-
-'''
-for calling UNO we need some kind of interrupt... maybe there should be a method in UNO that
-is run via a thread. This thread simply updates a buffer of all the UNO calls and callouts
-that have happened. At the end of a turn, the UNO state will process all of these and keep moving
-
-'''
-
-
-# TODO: will create two deck classes -> draw_deck, discard_deck
-    
 if __name__ == '__main__':
   controller = TerminalController()
   terminal_displayer = TerminalDisplayer()
-  tk_displayer = TkDisplayer()
-  manager = Manager(controller, [terminal_displayer, tk_displayer])
+  # tk_displayer = TkDisplayer()
+  manager = Manager(controller, [terminal_displayer])
   game = UNO(manager=manager, num_players=4)
   game.start()
