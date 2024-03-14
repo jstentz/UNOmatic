@@ -32,21 +32,31 @@ void loop() {
     String data = Serial.readStringUntil('\n');
     int value = data.toInt();
     if (cmd == 'd') { // deal
-      servo.attach(10);  // attaches the servo on pin 10 to the servo object
+      servo.attach(9);  // attaches the servo on pin 10 to the servo object
+      servo.write(180);
+      delay(200);
       servo.write(0);
-      delay(500);
+      delay(1200);
       servo.write(90);
       servo.detach();
 
       dcMotor->run(FORWARD);
-      delay(750);
+      delay(1000);
       dcMotor->run(RELEASE);
-
-      servo.attach(10);
-      servo.write(180);
-      delay(100);
-      servo.write(90);
+      
+      servo.attach(9);
+      for (int i = 0; i < 2; i++) {
+        servo.write(0);
+        delay(150);
+        servo.write(180);
+        delay(150);
+      }
       servo.detach();
+      // servo.attach(10);
+      // servo.write(180);
+      // delay(100);
+      // servo.write(90);
+      // servo.detach();
 
     } else if (cmd == 'r') { // rotate 
       stepperMotor->step(value, FORWARD, DOUBLE);
