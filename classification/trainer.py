@@ -122,11 +122,8 @@ class ConvNetwork(nn.Module):
     self.pool2 = nn.MaxPool2d(kernel_size=(2, 2), stride=2)
 
     # image_size / 2 x image_size / 2 x 32
-<<<<<<< HEAD
-=======
 
     # TODO: I think this is prob too big, cuz that is a lot of params and for what
->>>>>>> uno-update
     self.flat = nn.Flatten()
     self.fc3 = nn.Linear((img_size[0] // 2) * (img_size[1] // 2)  * self.num_filters2, self.linear_dims)
     self.act3 = nn.ReLU()

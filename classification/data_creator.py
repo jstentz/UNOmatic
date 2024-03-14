@@ -8,6 +8,9 @@ import sys
 
 from color_classifier import get_color
 
+'''
+Can also blur the images, scale, crop, and rotate
+'''
 
 saturation_stdev = 0.2
 brightness_stdev = 0.2
@@ -30,6 +33,15 @@ def change_hue(image, factor):
   image_hsv[:, :, 0] *= factor
   image_hsv[:, :, 0] = np.clip(image_hsv[:, :, 0], 0, 180)
   return cv.cvtColor(image_hsv.astype(np.uint8), cv.COLOR_HSV2BGR)
+
+
+def zoom_at(img, zoom=1, angle=0, coord=None):
+    cy, cx = [ i/2 for i in img.shape[:-1] ] if coord is None else coord[::-1]
+    
+    rot_mat = cv.getRotationMatrix2D((cx,cy), angle, zoom)
+    result = cv.warpAffine(img, rot_mat, img.shape[1::-1], flags=cv.INTER_LINEAR)
+    
+    return result
   
 
 if __name__ == '__main__':
