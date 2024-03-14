@@ -21,7 +21,7 @@ def get_color(image):
   hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
   # Define range for yellow color in HSV
-  lower_yellow = np.array([25, 100, 100])
+  lower_yellow = np.array([25, 150, 20])
   upper_yellow = np.array([35, 255, 255])
 
   # Create a mask to extract yellow regions
@@ -31,17 +31,19 @@ def get_color(image):
   yellow_intensity = calculate_average_intensity(image, yellow_mask)
 
   # Define range for red color in HSV
-  lower_red = np.array([0, 100, 100])
-  upper_red = np.array([10, 255, 200])
-
+  lower_red_1 = np.array([0, 150, 20])
+  upper_red_1 = np.array([10, 255, 200])
+  lower_red_2 = np.array([170, 150, 20])
+  upper_red_2 = np.array([180, 255, 200])
   # Create a mask to extract red regions
-  red_mask = cv2.inRange(hsv_image, lower_red, upper_red)
+  red_mask_1 = cv2.inRange(hsv_image, lower_red_1, upper_red_1)
+  red_mask_2 = cv2.inRange(hsv_image, lower_red_2, upper_red_2)
 
   # Calculate average intensity after applying red mask
-  red_intensity = calculate_average_intensity(image, red_mask)
+  red_intensity = calculate_average_intensity(image, red_mask_1 + red_mask_2)
 
   # Define range for blue color in HSV
-  lower_blue = np.array([90, 100, 100])
+  lower_blue = np.array([90, 150, 20])
   upper_blue = np.array([150, 255, 255])
 
   # Create a mask to extract blue regions
@@ -51,7 +53,7 @@ def get_color(image):
   blue_intensity = calculate_average_intensity(image, blue_mask)
 
   # Define range for red color in HSV
-  lower_green = np.array([40, 100, 100])
+  lower_green = np.array([40, 150, 20])
   upper_green = np.array([80, 255, 255])
 
   # Create a mask to extract green regions
