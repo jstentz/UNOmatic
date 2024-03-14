@@ -11,7 +11,7 @@ import torchvision.transforms as T
 import cv2 as cv
 
 # change these for a different model / different image to classify
-image_name = 'data/images/img_64736.jpg'
+image_name = 'top_data/top_0.jpg'
 model_path = 'model.pth'
 
 label_to_name = [
