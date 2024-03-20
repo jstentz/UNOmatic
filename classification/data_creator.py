@@ -5,6 +5,8 @@ Takes in images and outputs different images based on distributions.
 import cv2 as cv
 import numpy as np
 import sys
+import scipy
+import os
 
 from color_classifier import get_color
 
@@ -12,9 +14,15 @@ from color_classifier import get_color
 Can also blur the images, scale, crop, and rotate
 '''
 
-saturation_stdev = 0.2
-brightness_stdev = 0.2
-hue_stdev = 0.01
+saturation_mean, saturation_stdev = 1.0, 0.1
+brightness_mean, brightness_stdev = 1.0, 0.1
+hue_mean, hue_stdev = 1.0, 0.01
+zoom_mean, zoom_stdev = 1.0, 0.1
+angle_mean, angle_stdev = 0.0, 0.5
+coord_mean, coord_stdev = np.array([180, 180]), np.array([5, 5])
+
+# number of generated images per image
+N = 200
 
 def change_saturation(image, factor):
   image_hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV).astype(np.float32)
@@ -35,27 +43,87 @@ def change_hue(image, factor):
   return cv.cvtColor(image_hsv.astype(np.uint8), cv.COLOR_HSV2BGR)
 
 
-def zoom_at(img, zoom=1, angle=0, coord=None):
-    cy, cx = [ i/2 for i in img.shape[:-1] ] if coord is None else coord[::-1]
-    
-    rot_mat = cv.getRotationMatrix2D((cx,cy), angle, zoom)
-    result = cv.warpAffine(img, rot_mat, img.shape[1::-1], flags=cv.INTER_LINEAR)
-    
-    return result
-  
+# use the coord to translate
+def zoom_at(img, zoom, angle, coord=None):
+  cy, cx = [ i/2 for i in img.shape[:-1] ] if coord is None else coord[::-1]
+  rot_mat = cv.getRotationMatrix2D((cx,cy), angle, zoom)
+  result = cv.warpAffine(img, rot_mat, img.shape[1::-1], flags=cv.INTER_LINEAR)
+  return result
+
+def get_random_image(image):
+  brightness_factor = np.random.normal(loc=brightness_mean, scale=brightness_stdev)
+  saturation_factor = np.random.normal(loc=saturation_mean, scale=saturation_stdev)
+  hue_factor = np.random.normal(loc=hue_mean, scale=hue_stdev)
+  image_new = change_brightness(image, brightness_factor)
+  image_new = change_saturation(image_new, saturation_factor)
+  image_new = change_hue(image_new, hue_factor)
+  image_new = zoom_at(image_new, 
+                      zoom=scipy.stats.halfnorm.rvs(loc=zoom_mean, scale=zoom_stdev, size=1)[0],
+                      angle=scipy.stats.halfnorm.rvs(loc=angle_mean, scale=angle_stdev, size=1)[0],
+                      coord=np.random.normal(loc=coord_mean, scale=coord_stdev))
+  return image_new
+
+def flip_image(image):
+  return image[::-1, ::-1]
+
 
 if __name__ == '__main__':
-  image_path = sys.argv[1]
-  image = cv.imread(image_path)
 
-  for _ in range(50):
-    brightness_factor = np.random.normal(loc=1.0, scale=brightness_stdev)
-    saturation_factor = np.random.normal(loc=1.0, scale=saturation_stdev)
-    hue_factor = np.random.normal(loc=1.0, scale=hue_stdev)
-    image_new = change_hue(image, hue_factor)
-    image_new = change_hue(image_new, hue_factor)
-    image_new = change_hue(image_new, hue_factor)
-    cv.imshow('img', image_new)
-    print(get_color(image_new))
-    cv.waitKey(0)
-  cv.destroyAllWindows()
+  # path to a file with a bunch of labeled images
+  infile_path = './top_data/all_images_base.csv'
+  outfile_path = './top_data/all_images_modified.csv'
+  infile = open(infile_path, 'r')
+  outfile = open(outfile_path, 'w')
+
+  out_images_path = './top_data/images_modified'
+
+  lines = infile.readlines()
+
+  # write the header in the new file
+  outfile.write(lines[0])
+
+  for line in lines[1:]:
+    image_path, label_name, label_idx = line[:-1].split(',')
+
+    # load the image
+    image = flip_image(cv.imread(image_path))
+
+    new_image_path = os.path.join(out_images_path, f'{os.path.basename(image_path).removesuffix(".jpg")}_{0}.jpg')
+
+    # write the initial image 
+    cv.imwrite(new_image_path, image)
+
+    # save this in the csv file
+    outfile.write(f'{new_image_path},{label_name},{label_idx}\n')
+
+    for n in range(1, N):
+      new_image = get_random_image(image)
+      new_image_path = os.path.join(out_images_path, f'{os.path.basename(image_path).removesuffix(".jpg")}_{n}.jpg')
+
+      # write the new image 
+      cv.imwrite(new_image_path, new_image)
+
+      # save this in the csv file
+      outfile.write(f'{new_image_path},{label_name},{label_idx}\n')
+
+
+  infile.close()
+  outfile.close()
+
+
+
+  # for _ in range(50):
+  #   brightness_factor = np.random.normal(loc=brightness_mean, scale=brightness_stdev)
+  #   saturation_factor = np.random.normal(loc=saturation_mean, scale=saturation_stdev)
+  #   hue_factor = np.random.normal(loc=hue_mean, scale=hue_stdev)
+  #   image_new = change_hue(image, hue_factor)
+  #   image_new = change_hue(image_new, hue_factor)
+  #   image_new = change_hue(image_new, hue_factor)
+  #   image_new = zoom_at(image_new, 
+  #                       zoom=scipy.stats.halfnorm.rvs(loc=zoom_mean, scale=zoom_stdev, size=1)[0],
+  #                       angle=scipy.stats.halfnorm.rvs(loc=angle_mean, scale=angle_stdev, size=1)[0],
+  #                       coord=np.random.normal(loc=coord_mean, scale=coord_stdev))
+  #   cv.imshow('img', image_new)
+  #   print(get_color(image_new))
+  #   cv.waitKey(0)
+  # cv.destroyAllWindows()

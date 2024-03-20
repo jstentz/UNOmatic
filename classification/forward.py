@@ -11,7 +11,7 @@ import torchvision.transforms as T
 import cv2 as cv
 
 # change these for a different model / different image to classify
-image_name = 'top_data/top_0.jpg'
+image_name = './top_data/images_modified/top_278_140.jpg'
 model_path = 'model.pth'
 
 label_to_name = [
@@ -42,12 +42,13 @@ device = (
 
 
 # TODO: this should be in a shared location somehow
-img_size = (64, 64)
+img_size = (128, 128)
+crop_size = (128, 128)
 transform_img = T.Compose([
       T.ToTensor(), 
+      T.CenterCrop(crop_size),  # Center crop to 256x256
       T.Resize(min(img_size[0], img_size[1]), antialias=True),  # Resize the smallest side to 256 pixels
-      T.CenterCrop(img_size),  # Center crop to 256x256
-      T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # Normalize each color dimension
+      # T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # Normalize each color dimension
       # T.Grayscale() # for grayscale
       ])
 
@@ -70,6 +71,6 @@ if __name__ == '__main__':
     print(label_to_name[label_idx])
 
   # TODO: fix the coloring on this
-  cv.imshow('Image', image.numpy()[0].transpose(1, 2, 0))
+  cv.imshow('Image', image.numpy()[0].transpose(1, 2, 0)[:, :, ::-1])
   cv.waitKey(0)
   cv.destroyAllWindows()

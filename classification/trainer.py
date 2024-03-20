@@ -8,8 +8,11 @@ from PIL import Image
 import pandas as pd
 import argparse
 import wandb
+import cv2 as cv
+import numpy as np
 
-img_size = (64,64)
+img_size = (128, 128)
+crop_size = (128, 128)
 num_labels = 15
 
 # Get cpu, gpu or mps device for training.
@@ -20,6 +23,24 @@ device = (
   if torch.backends.mps.is_available()
   else "cpu"
 )
+
+label_to_name = [
+  '0',
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '9',
+  'skip',
+  'reverse',
+  'plus2',
+  'wild',
+  'plus4'
+]
 
 # def label_to_name(label):
 #   return ['parrot', 'narwhal', 'axolotl'][label]
@@ -42,37 +63,41 @@ class CsvImageDataset(Dataset):
     if self.transform:
       image = self.transform(image)
 
+    # cv.imshow('test', np.array(image).transpose(1, 2, 0))
+    # cv.waitKey(0)
+    # cv.destroyAllWindows()
     return image, label, label_name
 
 def get_data(batch_size):
     transform_img = T.Compose([
       T.ToTensor(), 
+      T.CenterCrop(crop_size),  # Center crop to 256x256
       T.Resize(min(img_size[0], img_size[1]), antialias=True),  # Resize the smallest side to 256 pixels
-      T.CenterCrop(img_size),  # Center crop to 256x256
-      T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # Normalize each color dimension
+      # T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # Normalize each color dimension
       # T.Grayscale() # for grayscale
       ])
     train_data = CsvImageDataset(
-      csv_file='./data/images_train.csv',
+      csv_file='./top_data/images_train.csv',
       transform=transform_img,
     )
     test_data = CsvImageDataset(
-      csv_file='./data/images_test.csv',
+      csv_file='./top_data/images_test.csv',
       transform=transform_img,
     )
     val_data = CsvImageDataset(
-      csv_file='./data/images_valid.csv',
+      csv_file='./top_data/images_valid.csv',
       transform=transform_img,
     )
 
-    train_dataloader = DataLoader(train_data, batch_size=batch_size)
+    train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     test_dataloader = DataLoader(test_data, batch_size=batch_size)
     val_dataloader = DataLoader(val_data, batch_size=batch_size)
-
+    
     for X, y, _ in train_dataloader:
       print(f"Shape of X [B, C, H, W]: {X.shape}")
       print(f"Shape of y: {y.shape} {y.dtype}")
       break
+
     
     return train_dataloader, test_dataloader, val_dataloader
 
@@ -101,13 +126,14 @@ class ConvNetwork(nn.Module):
     super().__init__()
 
     # params
-    self.num_filters1 = 16
-    self.num_filters2 = 32
-    self.linear_dims = 512
+    self.num_filters1 = 32
+    self.num_filters2 = 64
+    self.linear_dims1 = 512
+    self.linear_dims2 = 256
 
 
     # image_size x image_size x 3
-    self.conv1 = nn.Conv2d(3, self.num_filters1, kernel_size=(3,3), stride=1, padding=1)
+    self.conv1 = nn.Conv2d(3, self.num_filters1, kernel_size=(5,5), stride=1, padding=2)
 
     # image_size x image_size x 16
     self.act1 = nn.ReLU()
@@ -119,16 +145,23 @@ class ConvNetwork(nn.Module):
     self.act2 = nn.ReLU()
 
     
-    self.pool2 = nn.MaxPool2d(kernel_size=(2, 2), stride=2)
+    self.pool1 = nn.MaxPool2d(kernel_size=(2, 2), stride=2)
 
     # image_size / 2 x image_size / 2 x 32
 
     # TODO: I think this is prob too big, cuz that is a lot of params and for what
     self.flat = nn.Flatten()
-    self.fc3 = nn.Linear((img_size[0] // 2) * (img_size[1] // 2)  * self.num_filters2, self.linear_dims)
+    self.fc1 = nn.Linear((img_size[0] // 2) * (img_size[1] // 2)  * self.num_filters2, self.linear_dims1)
     self.act3 = nn.ReLU()
 
-    self.fc4 = nn.Linear(self.linear_dims, num_labels)
+    # TODO: add dropout here?
+
+    self.fc2 = nn.Linear(self.linear_dims1, self.linear_dims2)
+    self.act4 = nn.ReLU()
+
+    self.dropout = nn.Dropout(p=0.2)
+
+    self.fc3 = nn.Linear(self.linear_dims2, num_labels)
 
   def forward(self, x):
     # input 3x32x32, output 32x32x32
@@ -136,13 +169,17 @@ class ConvNetwork(nn.Module):
     # input 32x32x32, output 32x32x32
     x = self.act2(self.conv2(x))
     # input 32x32x32, output 32x16x16
-    x = self.pool2(x)
+    x = self.pool1(x)
     # input 32x16x16, output 8192
     x = self.flat(x)
     # input 8192, output 512
-    x = self.act3(self.fc3(x))
+    x = self.act3(self.fc1(x))
+
+    x = self.act4(self.fc2(x))
     # input 512, output 10
-    x = self.fc4(x)
+    x = self.dropout(x)
+
+    x = self.fc3(x)
     return x
 
 def train_one_epoch(dataloader, model, loss_fn, optimizer, t):
@@ -178,7 +215,7 @@ def train_one_epoch(dataloader, model, loss_fn, optimizer, t):
     # I think wandb.log will always increment x axis, so I'm not really sure how to make per example?
     # I just have to log everything I care about here and change what the x-axis is on the website I think
 
-    if batch % 10 == 0:
+    if batch % 1000 == 0:
       print(f"Train loss = {loss:>7f}  [{current:>5d}/{size:>5d}]")
         
 def evaluate(dataloader, dataname, model, loss_fn, is_last_epoch):
@@ -193,12 +230,13 @@ def evaluate(dataloader, dataname, model, loss_fn, is_last_epoch):
       avg_loss += loss_fn(pred, y).item()
       correct += (pred.argmax(1) == y).type(torch.float).sum().item()
 
-      # incorrect_loc = torch.where(pred.argmax(1) != y)
-      # if is_last_epoch and incorrect_loc[0].size(dim=0) > 0:
-      #   images = []
-      #   for image in X[incorrect_loc]:
-      #     images.append(wandb.Image(image))
-      #   wandb.log({f'incorrect_examples_{dataname}': images})
+      # log some incorrect images
+      incorrect_loc = torch.where(pred.argmax(1) != y)
+      if is_last_epoch and incorrect_loc[0].size(dim=0) > 0:
+        images = []
+        for i, image in enumerate(X[incorrect_loc]):
+          images.append(wandb.Image(image, caption=label_to_name[pred.argmax(1)[incorrect_loc][i]]))
+        wandb.log({f'incorrect_examples_{dataname}': images})
           
       # log some example images
       # if batch == 0 and is_last_epoch:
@@ -212,7 +250,7 @@ def evaluate(dataloader, dataname, model, loss_fn, is_last_epoch):
       #   wandb.log({f'examples_{dataname}': images})
   avg_loss /= size
   correct /= size
-  print(f"{dataname} accuracy = {(100*correct):>0.1f}%, {dataname} avg loss = {avg_loss:>8f}")
+  print(f"{dataname} accuracy = {(100*correct):>0.3f}%, {dataname} avg loss = {avg_loss:>8f}")
   return avg_loss, correct
     
 def main(n_epochs, batch_size, learning_rate):
