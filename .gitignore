@@ -6,4 +6,4 @@ data/
 wandb/
 *.pth
 __pycache__/
-*_data/
+*_data*/
