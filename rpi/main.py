@@ -5,7 +5,7 @@ import time
 import numpy as np
 
 def uart_init():
-    ser = serial.Serial("/dev/ttyACM0", 9600, timeout=1)
+    ser = serial.Serial("/dev/ttyACM1", 9600, timeout=10)
     return ser
 
 def cam_init(n, res):
@@ -69,23 +69,25 @@ def event_loop():
             add_card(card)
 
 def main():
-    # ser = uart_init()
-    cam_top = cam_init(0, (360, 360))
+    ser = uart_init()
+    time.sleep(1)
+    # cam_top = cam_init(0, (360, 360))
     # cam_bot = cam_init(1, (360, 360))
-    top_cnt = 114
+    # top_cnt = 114
     while True:
         cmd = input(">> ")
         if cmd == "q":
+            ser.close()
             break
         # if cmd == "t":
-        cam_top.capture_file(f'top_data/top_{top_cnt}.jpg')
-        top_cnt += 1
-        # else:
-        #     num_images = int(cmd)
-        #     for i in range(num_images):
-        #         cam_bot.capture_file(f'bot_{i}.jpg')
-        #         ser.write("d\n".encode("ascii"))
-        #         get_line(ser)
+        # cam_top.capture_file(f'top_data/top_{top_cnt}.jpg')
+        # top_cnt += 1
+        else:
+            # cam_bot.capture_file(f'bot_{i}.jpg')
+            i = int(cmd)
+            val = ser.write(f'd{i}\n'.encode("ascii"))
+            print(val)
+            get_line(ser)
 
 if __name__ == "__main__":
     main()
