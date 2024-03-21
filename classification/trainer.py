@@ -94,6 +94,8 @@ def get_data(batch_size):
     val_dataloader = DataLoader(val_data, batch_size=batch_size)
     
     for X, y, _ in train_dataloader:
+      print(X[0])
+      exit()
       print(f"Shape of X [B, C, H, W]: {X.shape}")
       print(f"Shape of y: {y.shape} {y.dtype}")
       break
@@ -283,7 +285,7 @@ def main(n_epochs, batch_size, learning_rate):
   print("Done!")
 
   # Save the model
-  torch.save(model.state_dict(), "model.pth")
+  torch.save(model, "model.pth")
   print("Saved PyTorch Model State to model.pth")
 
   # Load the model (just for the sake of example)

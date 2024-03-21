@@ -12,6 +12,7 @@ import cv2 as cv
 
 # change these for a different model / different image to classify
 image_name = './top_data/images_modified/top_278_140.jpg'
+# image_name = './top_data/test_image.jpg'
 model_path = 'model.pth'
 
 label_to_name = [
@@ -45,7 +46,7 @@ device = (
 img_size = (128, 128)
 crop_size = (128, 128)
 transform_img = T.Compose([
-      T.ToTensor(), 
+      # T.ToTensor(), 
       T.CenterCrop(crop_size),  # Center crop to 256x256
       T.Resize(min(img_size[0], img_size[1]), antialias=True),  # Resize the smallest side to 256 pixels
       # T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # Normalize each color dimension
@@ -54,12 +55,16 @@ transform_img = T.Compose([
 
 if __name__ == '__main__':
   # create the model
-  model = ConvNetwork()
-  model.load_state_dict(state_dict=torch.load(model_path))
+  model = torch.load(model_path)
   model.eval()
 
   # load the image
   image = Image.open(image_name).convert("RGB")
+
+  image = T.ToTensor()(image).to(device)
+  print(type(image))
+  # image = torch.flip(image, [1, 2])
+  print(image.size())
 
   # transform the image (need to add a dimension on the outside bc of batch size)
   image = transform_img(image).unsqueeze(0)
@@ -71,6 +76,6 @@ if __name__ == '__main__':
     print(label_to_name[label_idx])
 
   # TODO: fix the coloring on this
-  cv.imshow('Image', image.numpy()[0].transpose(1, 2, 0)[:, :, ::-1])
+  cv.imshow('Image', image.cpu().numpy()[0].transpose(1, 2, 0)[:, :, ::-1])
   cv.waitKey(0)
   cv.destroyAllWindows()
