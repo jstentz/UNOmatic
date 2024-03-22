@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets
+import torchvision.models as models
 from torch.utils.data import Dataset
 import torchvision.transforms as T
 from PIL import Image
@@ -11,8 +12,8 @@ import wandb
 import cv2 as cv
 import numpy as np
 
-img_size = (128, 128)
-crop_size = (128, 128)
+img_size = (224, 224)
+crop_size = (224, 224)
 num_labels = 15
 
 # Get cpu, gpu or mps device for training.
@@ -73,8 +74,11 @@ def get_data(batch_size):
       T.ToTensor(), 
       T.CenterCrop(crop_size),  # Center crop to 256x256
       T.Resize(min(img_size[0], img_size[1]), antialias=True),  # Resize the smallest side to 256 pixels
-      # T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # Normalize each color dimension
-      # T.Grayscale() # for grayscale
+      # TODO: should actually get the stats on the data to fill in these values
+      T.Normalize(mean=[0.4367269728078398, 0.4910890673198487, 0.5517533993374586], std=[0.25033840810120556, 0.22346674305638875, 0.220343264947015]), # Normalize each color dimension
+      # TODO: I wonder if grayscale will actually help
+      # T.Grayscale(), # for grayscale
+      # T.Normalize(0.5, 0.2),
       ])
     train_data = CsvImageDataset(
       csv_file='./top_data/images_train.csv',
@@ -84,6 +88,10 @@ def get_data(batch_size):
       csv_file='./top_data/images_test.csv',
       transform=transform_img,
     )
+    # extra_test_data = CsvImageDataset(
+    #   csv_file='./top_data/images_extra_test.csv',
+    #   transform=transform_img,
+    # )
     val_data = CsvImageDataset(
       csv_file='./top_data/images_valid.csv',
       transform=transform_img,
@@ -91,16 +99,14 @@ def get_data(batch_size):
 
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     test_dataloader = DataLoader(test_data, batch_size=batch_size)
+    # extra_test_data = DataLoader(extra_test_data, batch_size=batch_size)
     val_dataloader = DataLoader(val_data, batch_size=batch_size)
     
     for X, y, _ in train_dataloader:
-      print(X[0])
-      exit()
       print(f"Shape of X [B, C, H, W]: {X.shape}")
       print(f"Shape of y: {y.shape} {y.dtype}")
       break
 
-    
     return train_dataloader, test_dataloader, val_dataloader
 
 class NeuralNetwork(nn.Module):
@@ -128,14 +134,15 @@ class ConvNetwork(nn.Module):
     super().__init__()
 
     # params
-    self.num_filters1 = 32
-    self.num_filters2 = 64
-    self.linear_dims1 = 512
-    self.linear_dims2 = 256
+    self.in_dims = 1
+    self.num_filters1 = 8
+    self.num_filters2 = 16
+    self.linear_dims1 = 128
+    self.linear_dims2 = 64
 
 
     # image_size x image_size x 3
-    self.conv1 = nn.Conv2d(3, self.num_filters1, kernel_size=(5,5), stride=1, padding=2)
+    self.conv1 = nn.Conv2d(self.in_dims, self.num_filters1, kernel_size=(3,3), stride=1, padding=1)
 
     # image_size x image_size x 16
     self.act1 = nn.ReLU()
@@ -161,7 +168,7 @@ class ConvNetwork(nn.Module):
     self.fc2 = nn.Linear(self.linear_dims1, self.linear_dims2)
     self.act4 = nn.ReLU()
 
-    self.dropout = nn.Dropout(p=0.2)
+    # self.dropout = nn.Dropout(p=0.2)
 
     self.fc3 = nn.Linear(self.linear_dims2, num_labels)
 
@@ -179,10 +186,16 @@ class ConvNetwork(nn.Module):
 
     x = self.act4(self.fc2(x))
     # input 512, output 10
-    x = self.dropout(x)
+    # x = self.dropout(x)
 
     x = self.fc3(x)
     return x
+  
+# class ResNetClassifier(nn.Module):
+#   def __init__(self):
+#     super().__init__()
+#     self.resnet = models.resnet18(pretrained=True)
+#     self.fc = nn.Linear(self.resnet.fc.out_features, num_labels)
 
 def train_one_epoch(dataloader, model, loss_fn, optimizer, t):
   # need to use t to calculate the number of examples trained on so far 
@@ -217,7 +230,7 @@ def train_one_epoch(dataloader, model, loss_fn, optimizer, t):
     # I think wandb.log will always increment x axis, so I'm not really sure how to make per example?
     # I just have to log everything I care about here and change what the x-axis is on the website I think
 
-    if batch % 1000 == 0:
+    if batch % 100 == 0:
       print(f"Train loss = {loss:>7f}  [{current:>5d}/{size:>5d}]")
         
 def evaluate(dataloader, dataname, model, loss_fn, is_last_epoch):
@@ -260,11 +273,33 @@ def main(n_epochs, batch_size, learning_rate):
   train_dataloader, test_dataloader, val_dataloader = get_data(batch_size)
   
   # model = NeuralNetwork().to(device)
-  model = ConvNetwork().to(device)
+  # model = ConvNetwork().to(device)
+  # model = models.AlexNet(num_labels).to(device) # requires 224 x 224 images
+
+
+
+  # load untrained resnet model
+  model = models.resnet18(pretrained=True)
+
+  # Freeze all layers
+  # for param in model.parameters():
+  #   param.requires_grad = False
+
+  # Modify the last layer for your classification task
+  num_ftrs = model.fc.in_features
+  model.fc = nn.Sequential(
+      nn.Linear(num_ftrs, 512),  # Add a linear layer
+      nn.ReLU(),  # Add ReLU activation
+      nn.Linear(512, num_labels)  # Output layer for 15 classes
+  )
+
+  model = model.to(device)
+
   print(model)
+
   loss_fn = nn.CrossEntropyLoss()
   optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
-  # optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+  # optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.0001, betas=(.9, .999), eps=1e-8)
 
   
   for t in range(n_epochs):
@@ -272,6 +307,7 @@ def main(n_epochs, batch_size, learning_rate):
     train_one_epoch(train_dataloader, model, loss_fn, optimizer, t)
     train_loss, train_acc = evaluate(train_dataloader, "Train", model, loss_fn, t == n_epochs - 1)
     test_loss, test_acc = evaluate(test_dataloader, "Test", model, loss_fn, t == n_epochs - 1)
+    # extra_test_loss, extra_test_acc = evaluate(extra_test_dataloader, "Extra Test", model, loss_fn, t == n_epochs - 1)
     val_loss, val_acc = evaluate(val_dataloader, "Val", model, loss_fn, t == n_epochs - 1)
 
     # don't need to log the epoch number since that should just happen automatically with step
@@ -281,6 +317,8 @@ def main(n_epochs, batch_size, learning_rate):
                 'test_acc': test_acc,
                 'val_loss': val_loss,
                 'val_acc': val_acc,
+                # 'extra_test_loss': extra_test_loss,
+                # 'extra_test_acc': extra_test_acc,
                 'epoch': t})
   print("Done!")
 
@@ -315,3 +353,27 @@ if __name__ == '__main__':
 
       
   main(args.n_epochs, args.batch_size, args.learning_rate)
+
+
+'''
+Notes:
+ * try separating data before creating new data, make sure one of each image type is in training data
+ * look into ResNet
+ * experiment with different optimizers and batch sizes
+ * https://pytorch.org/hub/pytorch_vision_resnet/
+ * torchvision.models.resnet module
+ * could remove the head or could just try to train the whole thing
+
+
+ * SGD seems to work better
+ * SGD:
+  * best test acc seen on unfrozen network, pretrained=True, batch_size = 8, lr = 0.001 is 98.507% after 4 epochs
+  * best test acc seen on frozen network, pretrained=True, batch_size = 8, lr = 0.001 is 82.5% after 6 epochs
+  * best test acc seen on unfrozen network, pretrained=False, batch_size = 8, lr = 0.001 is ___% after _ epochs
+
+if this fails, try with the pretrained model and fine tune it
+
+
+
+when to save the model: https://nicjac.dev/posts/identify-best-model/
+'''

@@ -10,19 +10,15 @@ import os
 
 from color_classifier import get_color
 
-'''
-Can also blur the images, scale, crop, and rotate
-'''
-
 saturation_mean, saturation_stdev = 1.0, 0.1
-brightness_mean, brightness_stdev = 1.0, 0.1
+brightness_mean, brightness_stdev = 1.0, 0.2
 hue_mean, hue_stdev = 1.0, 0.01
-zoom_mean, zoom_stdev = 1.0, 0.1
-angle_mean, angle_stdev = 0.0, 0.5
-coord_mean, coord_stdev = np.array([180, 180]), np.array([5, 5])
+zoom_mean, zoom_stdev = 1.0, 0.3
+angle_mean, angle_stdev = 0.0, 1.0
+coord_mean, coord_stdev = np.array([180, 180]), np.array([20, 20])
 
 # number of generated images per image
-N = 200
+N = 30
 
 def change_saturation(image, factor):
   image_hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV).astype(np.float32)
@@ -100,6 +96,10 @@ if __name__ == '__main__':
       new_image = get_random_image(image)
       new_image_path = os.path.join(out_images_path, f'{os.path.basename(image_path).removesuffix(".jpg")}_{n}.jpg')
 
+
+      # cv.imshow('test', new_image)
+      # cv.waitKey(0)
+      # cv.destroyAllWindows()
       # write the new image 
       cv.imwrite(new_image_path, new_image)
 
@@ -109,21 +109,3 @@ if __name__ == '__main__':
 
   infile.close()
   outfile.close()
-
-
-
-  # for _ in range(50):
-  #   brightness_factor = np.random.normal(loc=brightness_mean, scale=brightness_stdev)
-  #   saturation_factor = np.random.normal(loc=saturation_mean, scale=saturation_stdev)
-  #   hue_factor = np.random.normal(loc=hue_mean, scale=hue_stdev)
-  #   image_new = change_hue(image, hue_factor)
-  #   image_new = change_hue(image_new, hue_factor)
-  #   image_new = change_hue(image_new, hue_factor)
-  #   image_new = zoom_at(image_new, 
-  #                       zoom=scipy.stats.halfnorm.rvs(loc=zoom_mean, scale=zoom_stdev, size=1)[0],
-  #                       angle=scipy.stats.halfnorm.rvs(loc=angle_mean, scale=angle_stdev, size=1)[0],
-  #                       coord=np.random.normal(loc=coord_mean, scale=coord_stdev))
-  #   cv.imshow('img', image_new)
-  #   print(get_color(image_new))
-  #   cv.waitKey(0)
-  # cv.destroyAllWindows()

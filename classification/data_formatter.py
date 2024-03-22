@@ -18,10 +18,10 @@ label_to_name = [
   'plus4'
 ]
 
-image_path = './top_data/images/'
+image_path = './top_data/extra_top_images/'
 
-infile_path = './top_data/top_data_labels.csv'
-outfile_path = 'data_labels.csv'
+infile_path = './top_data/images_extra_test.csv'
+outfile_path = './top_data/images_extra_test2.csv'
 
 infile = open(infile_path, 'r')
 outfile = open(outfile_path, 'w')
