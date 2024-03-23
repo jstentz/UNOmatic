@@ -1,19 +1,19 @@
 import random
 
-data_file_path = './top_data/all_images_modified.csv'
-train_out_path = './top_data/images_train.csv'
-valid_out_path = './top_data/images_valid.csv'
-test_out_path = './top_data/images_test.csv'
+data_file_path = './bot_data/all_images_modified.csv'
+train_out_path = './bot_data/images_train.csv'
+valid_out_path = './bot_data/images_valid.csv'
+test_out_path = './bot_data/images_test.csv'
 
 valid_portion = 0.1
 test_portion = 0.1
 train_portion = 1 - valid_portion - test_portion
 
 # number of real images
-real_images = 662
+real_images = 140
 
 # number of images per real image
-generated_images = 20
+generated_images = 30
 
 
 with open(data_file_path, 'r') as data_file:

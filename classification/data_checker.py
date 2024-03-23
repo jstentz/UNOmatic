@@ -4,8 +4,8 @@ Loops through images and makes sure they are labeled correctly.
 
 import cv2 as cv
 
-data_path_in = './top_data/all_images_base.csv'
-data_path_out = './top_data/all_images_base_fixed.csv'
+data_path_in = './bot_data/all_images_base.csv'
+data_path_out = './bot_data/all_images_base_fixed.csv'
 
 data_in = open(data_path_in, 'r')
 data_out = open(data_path_out, 'w')
@@ -40,7 +40,7 @@ for line in lines[1:]:
   path, label_name, label_idx = line.split(',')
   image = cv.imread(path)
 
-  image = cv.flip(image, -1)
+  # image = cv.flip(image, -1)
 
   cv.namedWindow('image')        # Create a named window
   cv.moveWindow('image', 1100,100)  # Move it to (40,30)

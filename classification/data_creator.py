@@ -66,12 +66,12 @@ def flip_image(image):
 if __name__ == '__main__':
 
   # path to a file with a bunch of labeled images
-  infile_path = './top_data/all_images_base.csv'
-  outfile_path = './top_data/all_images_modified.csv'
+  infile_path = './bot_data/all_images_base.csv'
+  outfile_path = './bot_data/all_images_modified.csv'
   infile = open(infile_path, 'r')
   outfile = open(outfile_path, 'w')
 
-  out_images_path = './top_data/images_modified'
+  out_images_path = './bot_data/images_modified'
 
   lines = infile.readlines()
 
@@ -82,7 +82,8 @@ if __name__ == '__main__':
     image_path, label_name, label_idx = line[:-1].split(',')
 
     # load the image
-    image = flip_image(cv.imread(image_path))
+    # image = flip_image(cv.imread(image_path))
+    image = cv.imread(image_path) # don't flip for bottom images
 
     new_image_path = os.path.join(out_images_path, f'{os.path.basename(image_path).removesuffix(".jpg")}_{0}.jpg')
 

@@ -70,6 +70,8 @@ class CsvImageDataset(Dataset):
     return image, label, label_name
 
 def get_data(batch_size):
+    
+    # transform for bottom images
     transform_img = T.Compose([
       T.ToTensor(), 
       T.CenterCrop(crop_size),  # Center crop to 256x256
@@ -80,20 +82,32 @@ def get_data(batch_size):
       # T.Grayscale(), # for grayscale
       # T.Normalize(0.5, 0.2),
       ])
+
+    # transform for top images
+    # transform_img = T.Compose([
+    #   T.ToTensor(), 
+    #   T.CenterCrop(crop_size),  # Center crop to 256x256
+    #   T.Resize(min(img_size[0], img_size[1]), antialias=True),  # Resize the smallest side to 256 pixels
+    #   # TODO: should actually get the stats on the data to fill in these values
+    #   T.Normalize(mean=[0.4367269728078398, 0.4910890673198487, 0.5517533993374586], std=[0.25033840810120556, 0.22346674305638875, 0.220343264947015]), # Normalize each color dimension
+    #   # TODO: I wonder if grayscale will actually help
+    #   # T.Grayscale(), # for grayscale
+    #   # T.Normalize(0.5, 0.2),
+    #   ])
     train_data = CsvImageDataset(
-      csv_file='./top_data/images_train.csv',
+      csv_file='./bot_data/images_train.csv',
       transform=transform_img,
     )
     test_data = CsvImageDataset(
-      csv_file='./top_data/images_test.csv',
+      csv_file='./bot_data/images_test.csv',
       transform=transform_img,
     )
     # extra_test_data = CsvImageDataset(
-    #   csv_file='./top_data/images_extra_test.csv',
+    #   csv_file='./bot_data/images_extra_test.csv',
     #   transform=transform_img,
     # )
     val_data = CsvImageDataset(
-      csv_file='./top_data/images_valid.csv',
+      csv_file='./bot_data/images_valid.csv',
       transform=transform_img,
     )
 
@@ -373,6 +387,8 @@ Notes:
 
 if this fails, try with the pretrained model and fine tune it
 
+need to fix the color classifier on the bottom camera
+consider cropping it to ignore the black on the side for the bottom camera (don't do this for the top camera)
 
 
 when to save the model: https://nicjac.dev/posts/identify-best-model/
