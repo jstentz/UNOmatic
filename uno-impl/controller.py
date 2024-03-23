@@ -8,6 +8,10 @@ from card import Card, Wild, PlusFour, Color
 from deck import Deck
 from player import Player
 from displayer import TkDisplayer
+import serial
+import time
+# from picamera2 import Picamera2
+# from gpiozero import LED, Button
 
 # only import what we need if we are doing type checking
 from typing import TYPE_CHECKING
@@ -142,3 +146,77 @@ class GUIController(Controller):
   # here, I guess the software controller will have to maintain it's own draw deck in the controller
   def deal_card(self) -> Card:
     return self.draw_pile.pop()
+
+class HWController(Controller):
+  def __init__(self):
+    super().__init__()
+    self.ser_init()
+    self.cam_init()
+    self.keypad_init()
+    self.model_init()
+    self.reset()
+
+  def ser_init(self) -> None:
+    self.ser = serial.Serial("/dev/ttyACM0", 9600, timeout=10)
+  
+  def ser_wait(self) -> str:
+    while True:
+        if self.ser.in_waiting > 0:
+            line = self.ser.readline().decode("ascii").strip()
+            return line
+
+
+  def cam_init(self) -> None:
+    # self.cam_bot = Picamera2(0)
+    # self.cam_config = self.cam_bot.create_still_configuration({"size": (360, 360)})
+    # self.cam_bot.configure(self.cam_config)
+    # self.cam_top = Picamera2(1)
+    # self.cam_top.configure(self.cam_config)
+    # self.cam_bot.start(show_preview=False)
+    # self.cam_top.start(show_preview=False)
+    pass
+
+  def keypad_init(self) -> None:
+    # TODO: figure out keypad pin specifics
+    pass
+
+  def model_init(self) -> None:
+    # TODO: figure out to import from another folder
+    pass
+    
+  def reset(self) -> None:
+    pass
+
+  def get_card(self, player: Player) -> Optional[Card]:
+    # TODO: wait for button press
+    # image = self.cam_top.capture_array()
+
+    # TODO: classify card
+    # TODO: convert classifcation to card type
+    return None
+
+  def get_draw_card_response(self, player: Player, card: Card) -> bool:
+    # TODO: wait for button press
+    return False
+
+  def get_bluff_answer(self, player: Player) -> bool:
+    # TODO: wait for button press
+    return False
+
+  def get_color_choice(self, player: Player) -> Color:
+    # TODO: wait for button press
+    return Color.RED
+
+  def advance_turn(self, dir: int) -> None:
+    self.ser.write(f'r{dir}200\n'.encode("ascii"))
+    _ = self.ser_wait()
+
+  def deal_card(self) -> Card:
+    # image = self.cam_bot.capture_array()
+    self.ser.write("d\n".encode("ascii"))
+
+    # TODO: classify card
+    # TODO: convert classifcation to card type
+
+    _ = self.ser_wait()
+    return Card(None, None)
