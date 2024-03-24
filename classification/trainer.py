@@ -12,9 +12,15 @@ import wandb
 import cv2 as cv
 import numpy as np
 
+# don't crop the image at all
 img_size = (224, 224)
-crop_size = (224, 224)
-num_labels = 15
+crop_size = (360, 360)
+
+# card type
+# num_labels = 15
+
+# card color
+num_labels = 5
 
 # Get cpu, gpu or mps device for training.
 device = (
@@ -43,8 +49,13 @@ label_to_name = [
   'plus4'
 ]
 
-# def label_to_name(label):
-#   return ['parrot', 'narwhal', 'axolotl'][label]
+label_to_color = [
+  'red',
+  'yellow',
+  'green',
+  'blue',
+  'none'
+]
 
 class CsvImageDataset(Dataset):
   def __init__(self, csv_file, transform=None):
@@ -71,13 +82,13 @@ class CsvImageDataset(Dataset):
 
 def get_data(batch_size):
     
-    # transform for bottom images
+    # transform all bottom images
     transform_img = T.Compose([
       T.ToTensor(), 
-      T.CenterCrop(crop_size),  # Center crop to 256x256
+      T.CenterCrop(crop_size),  
       T.Resize(min(img_size[0], img_size[1]), antialias=True),  # Resize the smallest side to 256 pixels
-      # TODO: should actually get the stats on the data to fill in these values
-      T.Normalize(mean=[0.4367269728078398, 0.4910890673198487, 0.5517533993374586], std=[0.25033840810120556, 0.22346674305638875, 0.220343264947015]), # Normalize each color dimension
+      # these are the stats for the combined data
+      T.Normalize(mean=[0.30910959716333414, 0.34933955945842665, 0.36630898255700345], std=[0.2647768747410307, 0.2591489816780959, 0.27447192038728097]), # Normalize each color dimension
       # TODO: I wonder if grayscale will actually help
       # T.Grayscale(), # for grayscale
       # T.Normalize(0.5, 0.2),
@@ -95,31 +106,28 @@ def get_data(batch_size):
     #   # T.Normalize(0.5, 0.2),
     #   ])
     train_data = CsvImageDataset(
-      csv_file='./bot_data/images_train.csv',
+      csv_file='./data/images_train_color.csv',
       transform=transform_img,
     )
     test_data = CsvImageDataset(
-      csv_file='./bot_data/images_test.csv',
+      csv_file='./data/images_test_color.csv',
       transform=transform_img,
     )
-    # extra_test_data = CsvImageDataset(
-    #   csv_file='./bot_data/images_extra_test.csv',
-    #   transform=transform_img,
-    # )
     val_data = CsvImageDataset(
-      csv_file='./bot_data/images_valid.csv',
+      csv_file='./data/images_valid_color.csv',
       transform=transform_img,
     )
 
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     test_dataloader = DataLoader(test_data, batch_size=batch_size)
-    # extra_test_data = DataLoader(extra_test_data, batch_size=batch_size)
     val_dataloader = DataLoader(val_data, batch_size=batch_size)
     
     for X, y, _ in train_dataloader:
       print(f"Shape of X [B, C, H, W]: {X.shape}")
       print(f"Shape of y: {y.shape} {y.dtype}")
       break
+
+    # print('here!')
 
     return train_dataloader, test_dataloader, val_dataloader
 
@@ -331,8 +339,6 @@ def main(n_epochs, batch_size, learning_rate):
                 'test_acc': test_acc,
                 'val_loss': val_loss,
                 'val_acc': val_acc,
-                # 'extra_test_loss': extra_test_loss,
-                # 'extra_test_acc': extra_test_acc,
                 'epoch': t})
   print("Done!")
 

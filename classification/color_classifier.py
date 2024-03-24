@@ -62,24 +62,39 @@ def get_color(image):
   # Calculate average intensity after applying green mask
   green_intensity = calculate_average_intensity(image, green_mask)
 
-  intensities = [red_intensity, green_intensity, blue_intensity, yellow_intensity]
-  labels = ['red', 'green', 'blue', 'yellow']
+  intensities = [red_intensity, yellow_intensity, green_intensity, blue_intensity]
+  labels = ['red', 'yellow', 'green', 'blue']
   label = max(zip(intensities, labels), key=lambda x: x[0])[1]
-  return label
+  return label, labels.index(label)
 
 
 if __name__ == '__main__':
-  images_dir = 'top_data/'
-  image_names = os.listdir(images_dir)
+  infile = open('./data/all_images_base.csv', 'r')
+  outfile = open('./data/all_images_base_color.csv', 'w')
 
 
-  for image_name in sorted(image_names, key=lambda x: int(x.removesuffix('.jpg')[x.find('_')+1:])):
-    image_path = os.path.join(images_dir, image_name)
+  outfile.write('image,label,label_idx\n')
+  
+  lines = infile.readlines()[1:]
 
-    # Read the image
-    image = cv2.imread(image_path)
-    label = get_color(image)
+  for line in lines:
+    path, _, _ = line.split(',')
+    image = cv2.imread(path)
+    label, label_idx = get_color(image)
+    outfile.write(f'{path},{label},{label_idx}\n')
 
-    cv2.imshow(label, image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+  infile.close()
+  outfile.close()
+  # image_names = os.listdir(images_dir)
+
+
+  # for image_name in sorted(image_names, key=lambda x: int(x.removesuffix('.jpg')[x.find('_')+1:])):
+  #   image_path = os.path.join(images_dir, image_name)
+
+  #   # Read the image
+  #   image = cv2.imread(image_path)
+  #   label = get_color(image)
+
+  #   cv2.imshow(label, image)
+  #   cv2.waitKey(0)
+  #   cv2.destroyAllWindows()

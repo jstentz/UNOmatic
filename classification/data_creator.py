@@ -10,15 +10,15 @@ import os
 
 from color_classifier import get_color
 
-saturation_mean, saturation_stdev = 1.0, 0.1
+saturation_mean, saturation_stdev = 1.0, 0.2
 brightness_mean, brightness_stdev = 1.0, 0.2
 hue_mean, hue_stdev = 1.0, 0.01
-zoom_mean, zoom_stdev = 1.0, 0.3
-angle_mean, angle_stdev = 0.0, 1.0
+zoom_mean, zoom_stdev = 1.0, 0.2
+angle_mean, angle_stdev = 0.0, 2.0
 coord_mean, coord_stdev = np.array([180, 180]), np.array([20, 20])
 
 # number of generated images per image
-N = 30
+N = 20
 
 def change_saturation(image, factor):
   image_hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV).astype(np.float32)
@@ -66,12 +66,12 @@ def flip_image(image):
 if __name__ == '__main__':
 
   # path to a file with a bunch of labeled images
-  infile_path = './bot_data/all_images_base.csv'
-  outfile_path = './bot_data/all_images_modified.csv'
+  infile_path = './data/all_images_base_color.csv'
+  outfile_path = './data/all_images_modified_color.csv'
   infile = open(infile_path, 'r')
   outfile = open(outfile_path, 'w')
 
-  out_images_path = './bot_data/images_modified'
+  out_images_path = './data/images_modified'
 
   lines = infile.readlines()
 

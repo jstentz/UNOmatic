@@ -6,7 +6,7 @@ import numpy as np
 import cv2 as cv
 
 
-infile = open('./top_data/images_train.csv', 'r')
+infile = open('./data/images_train.csv', 'r')
 image_size = (360, 360)
 total_size = image_size[0] * image_size[1]
 

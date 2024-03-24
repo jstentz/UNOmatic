@@ -4,30 +4,37 @@ Loops through images and makes sure they are labeled correctly.
 
 import cv2 as cv
 
-data_path_in = './bot_data/all_images_base.csv'
-data_path_out = './bot_data/all_images_base_fixed.csv'
+data_path_in = './data/all_images_base_color.csv'
+data_path_out = './data/all_images_base_color_fixed.csv'
 
 data_in = open(data_path_in, 'r')
 data_out = open(data_path_out, 'w')
 
-label_to_name = [
-  '0',
-  '1',
-  '2',
-  '3',
-  '4',
-  '5',
-  '6',
-  '7',
-  '8',
-  '9',
-  'skip',
-  'reverse',
-  'plus2',
-  'wild',
-  'plus4'
-]
+# label_to_name = [
+#   '0',
+#   '1',
+#   '2',
+#   '3',
+#   '4',
+#   '5',
+#   '6',
+#   '7',
+#   '8',
+#   '9',
+#   'skip',
+#   'reverse',
+#   'plus2',
+#   'wild',
+#   'plus4'
+# ]
 
+label_to_name = [
+  'red',
+  'yellow',
+  'green',
+  'blue',
+  'none'
+]
 
 lines = data_in.readlines()
 
