@@ -52,14 +52,33 @@ device = (
 
 
 # TODO: this should be in a shared location somehow
-img_size = (224, 224)
-crop_size = (360, 360)
-transform_img = T.Compose([
+img_size_both = (224, 224)
+crop_size_both = (360, 360)
+transform_img_both = T.Compose([
       # T.ToTensor(), 
-      T.CenterCrop(crop_size),  # Center crop to 256x256
-      T.Resize(min(img_size[0], img_size[1]), antialias=True),  # Resize the smallest side to 256 pixels
+      T.CenterCrop(crop_size_both),  # Center crop to 256x256
+      T.Resize(min(img_size_both[0], img_size_both[1]), antialias=True),  # Resize the smallest side to 256 pixels
       T.Normalize(mean=[0.30910959716333414, 0.34933955945842665, 0.36630898255700345], std=[0.2647768747410307, 0.2591489816780959, 0.27447192038728097]), # Normalize each color dimension
       ])
+
+img_size_top = (224, 224)
+crop_size_top = (224, 224)
+transform_img_top = T.Compose([
+      # T.ToTensor(), 
+      T.CenterCrop(crop_size_top),  # Center crop to 256x256
+      T.Resize(min(img_size_top[0], img_size_top[1]), antialias=True),  # Resize the smallest side to 256 pixels
+      T.Normalize(mean=[0.4367269728078398, 0.4910890673198487, 0.5517533993374586], std=[0.25033840810120556, 0.22346674305638875, 0.220343264947015]), # Normalize each color dimension
+      ])
+
+img_size_bot = (224, 224)
+crop_size_bot = (224, 224)
+transform_img_bot = T.Compose([
+      # T.ToTensor(), 
+      T.CenterCrop(crop_size_bot),  # Center crop to 256x256
+      T.Resize(min(img_size_bot[0], img_size_bot[1]), antialias=True),  # Resize the smallest side to 256 pixels
+      T.Normalize(mean=[0.13969138640706788, 0.17492677541873866, 0.15068305555046435], std=[0.16648552270709308, 0.18993078271824135, 0.17560376684656742]), # Normalize each color dimension
+      ])
+
 
 def init_model(model_path):
   model = torch.load(model_path)
@@ -73,8 +92,9 @@ def get_card(card_model, color_model, is_top: bool, image: np.ndarray):
   # flip the top camera images to match training data
   if is_top:
     image = torch.flip(image, [1, 2])
-
-  image = transform_img(image).unsqueeze(0)
+    image = transform_img_top(image).unsqueeze(0)
+  else:
+    image = transform_img_bot(image).unsqueeze(0)
 
   # run the forward pass to get card type
   with torch.no_grad():
