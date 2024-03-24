@@ -61,7 +61,6 @@ transform_img_both = T.Compose([
       T.Normalize(mean=[0.30910959716333414, 0.34933955945842665, 0.36630898255700345], std=[0.2647768747410307, 0.2591489816780959, 0.27447192038728097]), # Normalize each color dimension
       ])
 
-<<<<<<< Updated upstream
 img_size_top = (224, 224)
 crop_size_top = (224, 224)
 transform_img_top = T.Compose([
