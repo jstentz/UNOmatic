@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: uno
+Version: 0.0.1
+Summary: My first Python package
+Author: Jason Stentz
+Author-email: jstentz@andrew.cmu.edu
+
+My first Python package with a slightly longer description

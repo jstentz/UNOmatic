@@ -9,6 +9,7 @@ import torch
 from PIL import Image
 import torchvision.transforms as T
 import cv2 as cv
+import numpy as np
 
 # change these for a different model / different image to classify
 image_name = './top_data/images_modified/top_278_140.jpg'
@@ -33,6 +34,14 @@ label_to_name = [
   'plus4'
 ]
 
+label_to_color = [
+  'red',
+  'yellow',
+  'green',
+  'blue',
+  'none'
+]
+
 device = (
   "cuda"
   if torch.cuda.is_available()
@@ -44,29 +53,36 @@ device = (
 
 # TODO: this should be in a shared location somehow
 img_size = (224, 224)
-crop_size = (224, 224)
+crop_size = (360, 360)
 transform_img = T.Compose([
       # T.ToTensor(), 
       T.CenterCrop(crop_size),  # Center crop to 256x256
       T.Resize(min(img_size[0], img_size[1]), antialias=True),  # Resize the smallest side to 256 pixels
-      T.Normalize(mean=[0.4367269728078398, 0.4910890673198487, 0.5517533993374586], std=[0.25033840810120556, 0.22346674305638875, 0.220343264947015]), # Normalize each color dimension
+      T.Normalize(mean=[0.30910959716333414, 0.34933955945842665, 0.36630898255700345], std=[0.2647768747410307, 0.2591489816780959, 0.27447192038728097]), # Normalize each color dimension
       ])
 
-def get_model(model_path):
+def init_model(model_path):
   model = torch.load(model_path)
   model.eval()
   return model
 
-def forward(model, image_path):
-  # load the image
-  image = Image.open(image_path).convert("RGB")
+def get_card(card_model, color_model, is_top: bool, image: np.ndarray):
+  # convert to pytorch tensor
+  image = torch.from_numpy(image)
 
-  image = T.ToTensor()(image).to(device)
-  image = torch.flip(image, [1, 2])
+  # flip the top camera images to match training data
+  if is_top:
+    image = torch.flip(image, [1, 2])
+
   image = transform_img(image).unsqueeze(0)
 
-  # run the forward pass
+  # run the forward pass to get card type
   with torch.no_grad():
-    label_idx = model(image).argmax(1).item()
-    result = label_to_name[label_idx]
-  return result
+    card_label_idx = card_model(image).argmax(1).item()
+    card_label = label_to_name[card_label_idx]
+
+    # TODO: only run color model if non-wild / non-plus4
+    color_label_idx = color_model(image).argmax(1).item()
+    color_label = label_to_color[color_label_idx]
+
+  return color_label, card_label
