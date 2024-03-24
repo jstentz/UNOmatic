@@ -61,6 +61,7 @@ transform_img_both = T.Compose([
       T.Normalize(mean=[0.30910959716333414, 0.34933955945842665, 0.36630898255700345], std=[0.2647768747410307, 0.2591489816780959, 0.27447192038728097]), # Normalize each color dimension
       ])
 
+<<<<<<< Updated upstream
 img_size_top = (224, 224)
 crop_size_top = (224, 224)
 transform_img_top = T.Compose([
@@ -90,8 +91,8 @@ def init_model(model_path: str, on_pi: bool):
 
 def get_card(card_model, color_model, is_top: bool, image: np.ndarray):
   # convert to pytorch tensor
+  image = image.transpose(2,0,1)
   image = torch.from_numpy(image)
-
   # flip the top camera images to match training data
   if is_top:
     image = torch.flip(image, [1, 2])

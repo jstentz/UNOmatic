@@ -33,8 +33,7 @@ void loop() {
     String data = Serial.readStringUntil('\n');
     int value = data.toInt();
     if (cmd == 'd') {   // deal
-      for (int i = 0; i < value; i++) {
-        servo.attach(9);  // attaches the servo on pin 10 to the servo object
+        servo.attach(9);  // attaches the servo on pin 9 to the servo object
         servo.write(0);
         delay(750);
         servo.write(90);
@@ -55,7 +54,6 @@ void loop() {
         // delay(200);
         // servo.write(90);
         // servo.detach();
-      }
     } else if (cmd == 'r') {  // rotate
       stepperMotor->step(value, FORWARD, DOUBLE);
       stepperMotor->release();

@@ -2,10 +2,9 @@ from picamera2 import Picamera2
 from gpiozero import LED, Button
 import serial
 import time
-import numpy as np
 
 def uart_init():
-    ser = serial.Serial("/dev/ttyACM1", 9600, timeout=10)
+    ser = serial.Serial("/dev/ttyACM0", 9600, timeout=10)
     return ser
 
 def cam_init(n, res):
@@ -24,7 +23,7 @@ def get_line(ser):
         time.sleep(0.1)
 
 def model_init():
-    pass
+    model = ConvNetwork()
 
 def classify(model, image):
     pass
@@ -71,23 +70,20 @@ def event_loop():
 def main():
     ser = uart_init()
     time.sleep(1)
-    # cam_top = cam_init(0, (360, 360))
-    # cam_bot = cam_init(1, (360, 360))
-    # top_cnt = 114
+    # cam_top = cam_init(1, (360, 360))
+    cam_bot = cam_init(0, (360, 360))
+    cnt = 141
     while True:
         cmd = input(">> ")
         if cmd == "q":
-            ser.close()
+            # ser.close()
             break
-        # if cmd == "t":
-        # cam_top.capture_file(f'top_data/top_{top_cnt}.jpg')
-        # top_cnt += 1
         else:
-            # cam_bot.capture_file(f'bot_{i}.jpg')
-            i = int(cmd)
-            val = ser.write(f'd{i}\n'.encode("ascii"))
-            print(val)
+            cam_bot.capture_file(f'bot_data/bot_{cnt}.jpg')
+            cnt += 1
+            ser.write("d1\n".encode("ascii"))
             get_line(ser)
+
 
 if __name__ == "__main__":
     main()

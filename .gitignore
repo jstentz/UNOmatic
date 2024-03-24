@@ -7,3 +7,4 @@ wandb/
 *.pth
 __pycache__/
 *_data*/
+uno.egg-info/
