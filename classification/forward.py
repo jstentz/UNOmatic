@@ -80,8 +80,11 @@ transform_img_bot = T.Compose([
       ])
 
 
-def init_model(model_path):
-  model = torch.load(model_path)
+def init_model(model_path: str, on_pi: bool):
+  if on_pi:
+    model = torch.load(model_path, map_location=torch.device('cpu'))
+  else:
+    model = torch.load(model_path)
   model.eval()
   return model
 
