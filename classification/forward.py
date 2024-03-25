@@ -68,6 +68,4 @@ def get_card(card_model, color_model, image: np.ndarray, is_top_cam: bool = True
     card_label_idx = card_model(image).argmax(1).item()
     color_label_idx = color_model(image).argmax(1).item()
 
-    card = card_from_classification(card_label_idx, color_label_idx)
-
-  return card
+  return card_label_idx, color_label_idx
