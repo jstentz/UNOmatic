@@ -22,24 +22,24 @@ device = (
 img_size_both = (224, 224)
 crop_size_both = (360, 360)
 transform_img_both = T.Compose([
-      T.CenterCrop(crop_size_both),  # Center crop to 256x256
-      T.Resize(min(img_size_both[0], img_size_both[1]), antialias=True),  # Resize the smallest side to 256 pixels
+      T.CenterCrop(crop_size_both),  
+      T.Resize(min(img_size_both[0], img_size_both[1]), antialias=True), 
       T.Normalize(mean=[0.30910959716333414, 0.34933955945842665, 0.36630898255700345], std=[0.2647768747410307, 0.2591489816780959, 0.27447192038728097]), # Normalize each color dimension
       ])
 
 img_size_top = (224, 224)
 crop_size_top = (224, 224)
 transform_img_top = T.Compose([
-      T.CenterCrop(crop_size_top),  # Center crop to 256x256
-      T.Resize(min(img_size_top[0], img_size_top[1]), antialias=True),  # Resize the smallest side to 256 pixels
+      T.CenterCrop(crop_size_top),  
+      T.Resize(min(img_size_top[0], img_size_top[1]), antialias=True), 
       T.Normalize(mean=[0.4367269728078398, 0.4910890673198487, 0.5517533993374586], std=[0.25033840810120556, 0.22346674305638875, 0.220343264947015]), # Normalize each color dimension
       ])
 
 img_size_bot = (224, 224)
 crop_size_bot = (224, 224)
 transform_img_bot = T.Compose([
-      T.CenterCrop(crop_size_bot),  # Center crop to 256x256
-      T.Resize(min(img_size_bot[0], img_size_bot[1]), antialias=True),  # Resize the smallest side to 256 pixels
+      T.CenterCrop(crop_size_bot),  
+      T.Resize(min(img_size_bot[0], img_size_bot[1]), antialias=True), 
       T.Normalize(mean=[0.13969138640706788, 0.17492677541873866, 0.15068305555046435], std=[0.16648552270709308, 0.18993078271824135, 0.17560376684656742]), # Normalize each color dimension
       ])
 
