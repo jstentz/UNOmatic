@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Collection, Optional
 
-from card import Color, Card
+from uno.card import Color, Card
 
 
 class Player:

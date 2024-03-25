@@ -6,11 +6,11 @@ from __future__ import annotations
 
 from typing import Optional, Collection
 
-from card import Card, Wild, PlusFour, Color
-from deck import Deck
-from player import Player
-from controller import Controller
-from displayer import Displayer
+from uno.card import Card, Wild, PlusFour, Color
+from uno.deck import Deck
+from uno.player import Player
+from uno.controller import Controller
+from uno.displayer import Displayer
 
 # only import what we need if we are doing type checking
 from typing import TYPE_CHECKING

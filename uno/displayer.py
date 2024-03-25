@@ -6,11 +6,11 @@ Base class & implementations of the state displayer.
 # enables lazy type annotation resolving
 from __future__ import annotations
 
-from card import Wild, PlusFour
+from uno.card import Wild, PlusFour
 
 import tkinter as tk
-from card import Card, Wild, PlusFour, Skip, Reverse, PlusTwo, Number
-from player import Player
+from uno.card import Card, Wild, PlusFour, Skip, Reverse, PlusTwo, Number
+from uno.player import Player
 
 
 # only import what we need if we are doing type checking

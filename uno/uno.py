@@ -10,13 +10,13 @@ from typing import Collection, Optional
 from queue import Queue # used for golang-style channels
 from threading import Thread
 
-from deck import Deck
-from card import Color
-from card import Card, Wild, PlusFour
-from player import Player
-from manager import Manager
-from controller import TerminalController
-from displayer import TerminalDisplayer, TkDisplayer
+from uno.deck import Deck
+from uno.card import Color
+from uno.card import Card, Wild, PlusFour
+from uno.player import Player
+from uno.manager import Manager
+from uno.controller import TerminalController
+from uno.displayer import TerminalDisplayer, TkDisplayer
 
 class UNO:
   def __init__(self, manager: Manager, num_players: int, hand_size: int = 7):

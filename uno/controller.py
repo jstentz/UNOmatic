@@ -4,10 +4,10 @@ from __future__ import annotations
 from typing import Optional
 from queue import Queue
 
-from card import Card, Wild, PlusFour, Color
-from deck import Deck
-from player import Player
-from displayer import TkDisplayer
+from uno.card import Card, Wild, PlusFour, Color
+from uno.deck import Deck
+from uno.player import Player
+from uno.displayer import TkDisplayer
 import serial
 import time
 # from picamera2 import Picamera2
@@ -16,7 +16,7 @@ import time
 # only import what we need if we are doing type checking
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from uno import UNO
+  from uno.uno import UNO
   
 
 

@@ -4,8 +4,8 @@ from typing import Optional
 
 import numpy as np
 
-from card import Color
-from card import Card, Number, PlusTwo, Skip, Reverse, PlusFour, Wild
+from uno.card import Color
+from uno.card import Card, Number, PlusTwo, Skip, Reverse, PlusFour, Wild
 
 class Deck:
   TOTAL_CARDS = 108
