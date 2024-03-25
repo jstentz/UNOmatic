@@ -1,9 +1,13 @@
 import argparse
-from typing import List
+import os
 
 from uno.uno import UNO
 from uno.manager import Manager
 from uno import NAME_TO_CONTROLLER, NAME_TO_DISPLAYER
+
+def print_example_usage():
+  print("Example usage:")
+  print("python", os.path.basename(__file__), '-c', 'TerminalController', '-d', 'TkDisplayer', 'TerminalDisplayer')
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog='main',
