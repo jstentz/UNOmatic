@@ -1,17 +1,24 @@
 # enables lazy type annotation resolving
 from __future__ import annotations
 
+import time
+import os
+
 from typing import Optional
 from queue import Queue
+
+import time
+
+import serial
+# from picamera2 import Picamera2
+# from gpiozero import LED, Button
 
 from uno.card import Card, Wild, PlusFour, Color
 from uno.deck import Deck
 from uno.player import Player
 from uno.displayer import TkDisplayer
-import serial
-import time
-# from picamera2 import Picamera2
-# from gpiozero import LED, Button
+
+from classification.forward import init_model, get_card
 
 # only import what we need if we are doing type checking
 from typing import TYPE_CHECKING
@@ -181,8 +188,11 @@ class HWController(Controller):
     pass
 
   def model_init(self) -> None:
-    # TODO: figure out to import from another folder
-    pass
+    file_dir = os.path.split(__file__)[0]
+    model_dir = os.path.join(file_dir,'../classification/models')
+    self.model_top = init_model(os.path.join(model_dir, 'model_top_pretrain.pth'), True)
+    self.model_bot = init_model(os.path.join(model_dir, 'model_bot_pretrain.pth'), True)
+    self.model_color = init_model(os.path.join(model_dir, 'model_color_pretrain.pth'), True)
     
   def reset(self) -> None:
     pass
