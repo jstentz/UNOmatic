@@ -8,3 +8,9 @@ To install all necessary packages, run
 ```shell
 pip install -r requirements.txt
 ```
+
+To install our uno package, run
+```shell
+pip install -e .
+```
+from the repository root.
