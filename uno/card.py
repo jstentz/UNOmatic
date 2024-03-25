@@ -7,8 +7,8 @@ from enum import IntEnum
 # only import what we need if we are doing type checking
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from uno import UNO
-  from player import Player
+  from uno.uno import UNO
+  from uno.player import Player
 
 
 

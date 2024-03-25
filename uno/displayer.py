@@ -16,7 +16,7 @@ from uno.player import Player
 # only import what we need if we are doing type checking
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from uno import UNO
+  from uno.uno import UNO
 
 class Displayer:
   def __init__(self):

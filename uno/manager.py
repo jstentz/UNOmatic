@@ -15,7 +15,7 @@ from uno.displayer import Displayer
 # only import what we need if we are doing type checking
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from uno import UNO
+  from uno.uno import UNO
 
 
 # TODO: in the future, maybe it's best to not explicitly have a display_state method

@@ -1,5 +1,5 @@
-from card import Card, Wild, PlusFour, PlusTwo, Skip, Reverse, Number
-from card import Color
+from uno.card import Card, Wild, PlusFour, PlusTwo, Skip, Reverse, Number
+from uno.card import Color
 
 def card_from_string(card_str: str) -> Card:
   pass
