@@ -6,8 +6,6 @@ Runs one forward pass on an image and displays predicted class.
 import torch
 import torchvision.transforms as T
 import numpy as np
-from uno.utils import card_from_classification
-from uno.card import Card
 
 
 device = (
@@ -52,7 +50,7 @@ def init_model(model_path: str, on_pi: bool):
   model.eval()
   return model
 
-def get_card(card_model, color_model, image: np.ndarray, is_top_cam: bool = True) -> Card:
+def get_card(card_model, color_model, image: np.ndarray, is_top_cam: bool = True) -> tuple[int, int]:
   # convert to pytorch tensor
   image = image.transpose(2,0,1)
   image = torch.from_numpy(image).to(device)
