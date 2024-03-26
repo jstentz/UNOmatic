@@ -1,5 +1,5 @@
 from picamera2 import Picamera2
-from gpiozero import LED, Button
+import gpiod
 import serial
 import time
 
@@ -46,44 +46,52 @@ def deal(ser, cam, num_deal):
         ser.write("d\n".encode("ascii"))
         get_line(ser)
     return images
-            
-def event_loop():
-    ser = uart_init()
-    cam_top = cam_init(0, (540, 360))
-    cam_bottom= cam_init(0, (540, 360))
-    cam_top.start(show_preview=True)
-    cam_bottom.start(show_preview=True)
-    model = model_init()
-    button_new_move = Button(2)
-    while True:
-        button_new_move.wait_for_press()
-        out_top = cam_top.capture_array()
-        card = classify(model, out_top)
-        num_deal = play_one_turn(card)
-        # need to do a bunch of control flow
-        rotate(ser, 90)
-        images = deal(ser, cam_bottom, num_deal)
-        for image in images:
-            card = classify(model, image)
-            add_card(card)
 
+def keypad_read(col_lines, row_lines):
+    names = [["1","4","7","*"], ["2","5","8","0"], ["3","6","9","#"]]
+    for (i, col) in enumerate(col_lines):
+        col.set_value(1)
+        for (j, row) in enumerate(row_lines):
+            if row.get_value() == 1:
+                col.set_value(0)
+                return names[i][j]
+        col.set_value(0)
+    return ""
+        
+
+def read():
+    pass
 def main():
-    ser = uart_init()
-    time.sleep(1)
+    row_pins = [
+    ("r1", 6),
+    ("r2", 21),
+    ("r3", 20),
+    ("r4", 19)]
+    col_pins = [
+    ("c1", 13),
+    ("c2", 5),
+    ("c3", 26)]
+    # ser = uart_init()
+    # time.sleep(1)
     # cam_top = cam_init(1, (360, 360))
-    cam_bot = cam_init(0, (360, 360))
-    cnt = 141
+    # cam_bot = cam_init(0, (360, 360))
+    # cnt = 141
+    chip = gpiod.Chip('gpiochip4')
+    row_lines = []
+    for (consumer, pin) in row_pins:
+        row_lines.append(chip.get_line(pin))
+        row_lines[-1].request(consumer = consumer, type=gpiod.LINE_REQ_DIR_IN, flags=gpiod.LINE_REQ_FLAG_BIAS_PULL_DOWN)
+    col_lines = []
+    for (consumer, pin) in col_pins:
+        col_lines.append(chip.get_line(pin))
+        col_lines[-1].request(consumer = consumer, type=gpiod.LINE_REQ_DIR_OUT)
+        col_lines[-1].set_value(0)
     while True:
         cmd = input(">> ")
         if cmd == "q":
-            # ser.close()
             break
         else:
-            cam_bot.capture_file(f'bot_data/bot_{cnt}.jpg')
-            cnt += 1
-            ser.write("d1\n".encode("ascii"))
-            get_line(ser)
-
+            print(keypad_read(col_lines, row_lines))
 
 if __name__ == "__main__":
     main()
