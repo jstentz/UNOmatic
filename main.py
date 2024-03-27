@@ -13,10 +13,15 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog='main',
                                    description='UNO project for 18-500')
   
-  parser.add_argument('-p', '--num_players',
+  parser.add_argument('--num_players',
                       help='the number of players in the UNO game',
                       type=int,
                       default=4)
+  
+  parser.add_argument('--hand_size',
+                      help='the number of cards per hand',
+                      type=int,
+                      default=7)
   
   parser.add_argument('-c', '--controller_name', 
                       help='the class name of the controller to use', 
@@ -40,5 +45,5 @@ if __name__ == '__main__':
   displayers = [displayer_class() for displayer_class in displayer_classes]
   manager = Manager(controller, displayers)
 
-  game = UNO(manager=manager, num_players=args.num_players)
+  game = UNO(manager=manager, num_players=args.num_players, hand_size=args.hand_size)
   game.start()

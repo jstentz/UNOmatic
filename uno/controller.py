@@ -24,12 +24,6 @@ from classification.forward import init_model, get_card
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from uno.uno import UNO
-  
-
-
-# TODO: separate the controller from the displayer, I think that makes the most sense, although
-# maybe it doesn't make sense though, since the way you display it is probably the same as the GUI or whatever
-
 
 # Base class for the functionality that a Controller must support
 class Controller:
@@ -71,8 +65,9 @@ class Controller:
   
   # TODO: type this action
   def _send_to_state(self, action) -> None:
-    # puts action on the queue and waits until the state takes it off the queue
-    self._async_action_queue.put(action)
+    # puts action on the queue
+    # should I wait here? It may not handle the issue until the end of the turn
+    self._async_action_queue.put(action, block=False)
 
 # Handles game state interactions through the terminal
 class TerminalController(Controller):

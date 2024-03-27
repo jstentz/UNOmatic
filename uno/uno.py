@@ -15,8 +15,6 @@ from uno.card import Color
 from uno.card import Card, Wild, PlusFour
 from uno.player import Player
 from uno.manager import Manager
-from uno.controller import TerminalController
-from uno.displayer import TerminalDisplayer, TkDisplayer
 
 class UNO:
   def __init__(self, manager: Manager, num_players: int, hand_size: int = 7):
@@ -44,7 +42,15 @@ class UNO:
     self.dir: int = +1 # stores which direction the game is moving in 
 
     # generate players and their hands
-    self.players: Collection[Player] = [Player([self.manager.deal_card() for _ in range(self.hand_size)], pos) for pos in range(self.num_players)]
+
+    self.players: Collection[Player] = []
+    
+    # do the initial dealing phase
+    for pos in range(self.num_players):
+      # deal all the cards to this player
+      self.players.append(Player([self.manager.deal_card() for _ in range(self.hand_size)], pos))
+      # advance to the next player
+      self.manager.advance_turn(self.dir)
 
     # repeatedly check if we are drawing wilds or plus4s
     # if we are, put them on the discard pile
@@ -74,14 +80,10 @@ class UNO:
     # ask the player for a card
     curr_player: Player = self.players[self.turn]
 
-    # TODO: this part will be different, since now I have to get it from the model
-    # selected_card: Optional[Card] = curr_player.get_card(self.discard_pile.peek(), self.color)
-
     selected_card = self.manager.get_card(curr_player)
 
     if selected_card is not None and selected_card not in curr_player.get_playable_cards(self.discard_pile.peek(), self.color):
       self.manager.signal_invalid_state()
-
 
     # if they give a card back, play it
     if selected_card is not None:
@@ -128,13 +130,9 @@ class UNO:
   def reverse(self) -> None:
     self.dir = -self.dir
 
+  def __del__(self) -> None:
+    # TODO: send a signal to self to end the thread
+    pass
+
   def __repr__(self) -> str:
     return ''
-
-if __name__ == '__main__':
-  controller = TerminalController()
-  terminal_displayer = TerminalDisplayer()
-  tk_displayer = TkDisplayer()
-  manager = Manager(controller, [terminal_displayer, tk_displayer])
-  game = UNO(manager=manager, num_players=4)
-  game.start()
