@@ -239,7 +239,7 @@ class HWController(Controller):
     return Color.RED
 
   def advance_turn(self, dir: int) -> None:
-    self.ser.write(f'r{dir}200\n'.encode("ascii"))
+    self.ser.write(f'r{dir}\n'.encode("ascii"))
     _ = self.ser_wait()
 
   def deal_card(self) -> Card:
