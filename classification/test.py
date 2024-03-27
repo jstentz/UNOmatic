@@ -6,6 +6,8 @@ from forward import init_model, get_card
 import cv2 as cv
 import numpy as np
 
+from uno.utils import card_from_classification
+
 def cam_init(n, res):
     cam = Picamera2(n)
     config = cam.create_still_configuration({"size": res})
@@ -14,7 +16,7 @@ def cam_init(n, res):
     return cam
 
 def uart_init():
-    ser = serial.Serial("/dev/ttyACM1", 9600, timeout=10)
+    ser = serial.Serial("/dev/ttyACM0", 9600, timeout=10)
     return ser
 
 def get_line(ser):
@@ -25,10 +27,10 @@ def get_line(ser):
         time.sleep(0.1)
 
 def main():
-    cam_top = cam_init(1, (360, 360))
-    # ser = uart_init()
-    card_model = init_model('model_top_pretrain.pth', True)
-    color_model = init_model('model_color_pretrain.pth', True)
+    cam_top = cam_init(0, (360, 360))
+    ser = uart_init()
+    card_model = init_model('models/model_bot_pretrain.pth', True)
+    color_model = init_model('models/model_color_pretrain.pth', True)
     time.sleep(1)
     while True:
         cmd = input(">> ")
@@ -39,12 +41,11 @@ def main():
             cv.imshow("your mom", cv.cvtColor(image, cv.COLOR_RGB2BGR))
             cv.waitKey(0)
             cv.destroyAllWindows()
-            # ser.write("d\n".encode("ascii"))
+            ser.write("d\n".encode("ascii"))
 
-            color, card = get_card(card_model, color_model, True, image)
-            print(color)
+            card = card_from_classification(*get_card(card_model, color_model, image, False))
             print(card)
-            # get_line(ser)
+            get_line(ser)
 
 if __name__ == "__main__":
     main()

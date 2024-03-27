@@ -149,13 +149,15 @@ class GUIController(Controller):
     return self.draw_pile.pop()
 
 class HWController(Controller):
-  P_R1 = 6
-  P_R2 = 21
-  P_R3 = 20
-  P_R4 = 19
-  P_C1 = 13
-  P_C2 = 5
-  P_C3 = 26
+  row_pins = [
+  ("r1", 6),
+  ("r2", 21),
+  ("r3", 20),
+  ("r4", 19)]
+  col_pins = [
+  ("c1", 13),
+  ("c2", 5),
+  ("c3", 26)]
   def __init__(self):
     super().__init__()
     self.ser_init()
@@ -185,7 +187,27 @@ class HWController(Controller):
 
   def keypad_init(self) -> None:
     # TODO: figure out keypad pin specifics
-    pass
+    chip = gpiod.Chip('gpiochip4')
+    self.row_lines = []
+    for (consumer, pin) in HWController.row_pins:
+        self.row_lines.append(chip.get_line(pin))
+        self.row_lines[-1].request(consumer = consumer, type=gpiod.LINE_REQ_DIR_IN, flags=gpiod.LINE_REQ_FLAG_BIAS_PULL_DOWN)
+    self.col_lines = []
+    for (consumer, pin) in HWController.col_pins:
+        self.col_lines.append(chip.get_line(pin))
+        self.col_lines[-1].request(consumer = consumer, type=gpiod.LINE_REQ_DIR_OUT)
+        self.col_lines[-1].set_value(0)
+
+  def keypad_read(self) -> str:
+    names = [["1","4","7","*"], ["2","5","8","0"], ["3","6","9","#"]]
+    for (i, col) in enumerate(self.col_lines):
+      col.set_value(1)
+      for (j, row) in enumerate(self.row_lines):
+        if row.get_value() == 1:
+          col.set_value(0)
+          return names[i][j]
+        col.set_value(0)
+    return ""
 
   def model_init(self) -> None:
     file_dir = os.path.split(__file__)[0]
@@ -213,6 +235,7 @@ class HWController(Controller):
 
   def get_color_choice(self, player: Player) -> Color:
     # TODO: wait for button press
+    # TODO: set led
     return Color.RED
 
   def advance_turn(self, dir: int) -> None:
