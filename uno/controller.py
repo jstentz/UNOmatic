@@ -1,17 +1,19 @@
 # enables lazy type annotation resolving
 from __future__ import annotations
 
-import time
 import os
+import time
+import numpy as np
 
 from typing import Optional
 from queue import Queue
 
-import time
-
 import serial
-# from picamera2 import Picamera2
-# from gpiozero import LED, Button
+try:
+  from picamera2 import Picamera2
+  import gpiod
+except ImportError:
+  print('WARNING: Hardware modules not installed')
 
 from uno.card import Card, Wild, PlusFour, Color
 from uno.deck import Deck
@@ -19,6 +21,7 @@ from uno.player import Player
 from uno.displayer import TkDisplayer
 
 from classification.forward import init_model, get_card
+from uno.utils import card_from_classification
 
 # only import what we need if we are doing type checking
 from typing import TYPE_CHECKING
@@ -150,6 +153,13 @@ class GUIController(Controller):
     return self.draw_pile.pop()
 
 class HWController(Controller):
+  P_R1 = 6
+  P_R2 = 21
+  P_R3 = 20
+  P_R4 = 19
+  P_C1 = 13
+  P_C2 = 5
+  P_C3 = 26
   def __init__(self):
     super().__init__()
     self.ser_init()
@@ -169,14 +179,13 @@ class HWController(Controller):
 
 
   def cam_init(self) -> None:
-    # self.cam_bot = Picamera2(0)
-    # self.cam_config = self.cam_bot.create_still_configuration({"size": (360, 360)})
-    # self.cam_bot.configure(self.cam_config)
-    # self.cam_top = Picamera2(1)
-    # self.cam_top.configure(self.cam_config)
-    # self.cam_bot.start(show_preview=False)
-    # self.cam_top.start(show_preview=False)
-    pass
+    self.cam_bot = Picamera2(0)
+    self.cam_config = self.cam_bot.create_still_configuration({"size": (360, 360)})
+    self.cam_bot.configure(self.cam_config)
+    self.cam_top = Picamera2(1)
+    self.cam_top.configure(self.cam_config)
+    self.cam_bot.start(show_preview=False)
+    self.cam_top.start(show_preview=False)
 
   def keypad_init(self) -> None:
     # TODO: figure out keypad pin specifics
@@ -194,11 +203,9 @@ class HWController(Controller):
 
   def get_card(self, player: Player) -> Optional[Card]:
     # TODO: wait for button press
-    # image = self.cam_top.capture_array()
-
-    # TODO: classify card
-    # TODO: convert classifcation to card type
-    return None
+    # don't look at image if they press button to not play a card
+    image = self.cam_top.capture_array().astype(np.float32) / 255
+    return card_from_classification(*get_card(self.model_top, self.model_color, image, True))
 
   def get_draw_card_response(self, player: Player, card: Card) -> bool:
     # TODO: wait for button press
@@ -217,11 +224,10 @@ class HWController(Controller):
     _ = self.ser_wait()
 
   def deal_card(self) -> Card:
-    # image = self.cam_bot.capture_array()
+    image = self.cam_bot.capture_array().astype(np.float32) / 255
+
     self.ser.write("d\n".encode("ascii"))
-
-    # TODO: classify card
-    # TODO: convert classifcation to card type
-
+    labels = get_card(self.model_bot, self.model_color, image, True)
     _ = self.ser_wait()
-    return Card(None, None)
+
+    return card_from_classification(*labels)
