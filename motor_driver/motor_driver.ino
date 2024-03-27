@@ -56,7 +56,6 @@ void loop() {
         // servo.detach();
     } else if (cmd == 'r') {  // rotate
       if (value) {
-        Serial.println("here");
         stepperMotor->step(200, FORWARD, DOUBLE);
       } else {
         stepperMotor->step(200, BACKWARD, DOUBLE);
