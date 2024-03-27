@@ -40,7 +40,7 @@ void loop() {
         servo.detach();
 
         dcMotor->run(FORWARD);
-        delay(600);
+        delay(1000);
         dcMotor->run(RELEASE);
 
         // servo.attach(9);
@@ -56,9 +56,9 @@ void loop() {
         // servo.detach();
     } else if (cmd == 'r') {  // rotate
       if (value) {
-        stepperMotor->step(200, FORWARD, DOUBLE);
+        stepperMotor->step(199, FORWARD, DOUBLE);
       } else {
-        stepperMotor->step(200, BACKWARD, DOUBLE);
+        stepperMotor->step(199, BACKWARD, DOUBLE);
       }
       stepperMotor->release();
     }

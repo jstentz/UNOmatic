@@ -168,6 +168,7 @@ class HWController(Controller):
 
   def ser_init(self) -> None:
     self.ser = serial.Serial("/dev/ttyACM0", 9600, timeout=10)
+    time.sleep(1)
   
   def ser_wait(self) -> str:
     while True:
@@ -247,7 +248,9 @@ class HWController(Controller):
     image = self.cam_bot.capture_array().astype(np.float32) / 255
 
     self.ser.write("d\n".encode("ascii"))
-    labels = get_card(self.model_bot, self.model_color, image, True)
+    labels = get_card(self.model_bot, self.model_color, image, False)
     _ = self.ser_wait()
 
-    return card_from_classification(*labels)
+    card = card_from_classification(*labels)
+    print(card)
+    return card
