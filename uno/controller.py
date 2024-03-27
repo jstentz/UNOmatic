@@ -222,6 +222,7 @@ class HWController(Controller):
   def get_card(self, player: Player) -> Optional[Card]:
     # TODO: wait for button press
     # don't look at image if they press button to not play a card
+    input('Click button to classify')
     image = self.cam_top.capture_array().astype(np.float32) / 255
     return card_from_classification(*get_card(self.model_top, self.model_color, image, True))
 

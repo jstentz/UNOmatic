@@ -42,7 +42,6 @@ class UNO:
     self.dir: int = +1 # stores which direction the game is moving in 
 
     # generate players and their hands
-
     self.players: Collection[Player] = []
     
     # do the initial dealing phase
