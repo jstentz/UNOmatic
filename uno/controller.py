@@ -15,7 +15,7 @@ try:
 except ImportError:
   print('WARNING: Hardware modules not installed')
 
-from uno.card import Card, Wild, PlusFour, Color
+from uno.card import Card, Color
 from uno.deck import Deck
 from uno.player import Player
 from uno.displayer import TkDisplayer
@@ -23,10 +23,6 @@ from uno.displayer import TkDisplayer
 from classification.forward import init_model, get_card
 from uno.utils import card_from_classification
 
-# only import what we need if we are doing type checking
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-  from uno.uno import UNO
 
 # Base class for the functionality that a Controller must support
 class Controller:
