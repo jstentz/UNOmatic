@@ -64,4 +64,4 @@ class Manager:
   # signal that we have entered an invalid state
   def signal_invalid_state(self, state: UNO) -> None:
     for displayer in self.displayers:
-      displayer.signal_invalid_state()
+      displayer.signal_invalid_state(state)
