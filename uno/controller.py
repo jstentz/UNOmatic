@@ -154,10 +154,24 @@ class HWController(Controller):
   ("r2", 21),
   ("r3", 20),
   ("r4", 19)]
+
   col_pins = [
   ("c1", 13),
   ("c2", 5),
   ("c3", 26)]
+
+  RESET = (0,0)
+  UNO_FAIL = (0,1)
+  PLAY_TURN = (1,0)
+  SKIP_TURN = (1,1)
+  CALL_BLUFF = (2,0)
+  NO_CALL_BLUFF = (2,1)
+  RESERVED_1 = (3,0)
+  RESERVED_2 = (3,1)
+  SET_RED = (0,2)
+  SET_BLUE = (1,2)
+  SET_GREEN = (2,2)
+  SET_YELLOW = (3,2)
   def __init__(self):
     super().__init__()
     self.ser_init()
@@ -199,16 +213,15 @@ class HWController(Controller):
         self.col_lines[-1].request(consumer = consumer, type=gpiod.LINE_REQ_DIR_OUT)
         self.col_lines[-1].set_value(0)
 
-  def keypad_read(self) -> str:
-    names = [["1","4","7","*"], ["2","5","8","0"], ["3","6","9","#"]]
+  def keypad_read(self) -> Optional[tuple[int, int]]:
     for (i, col) in enumerate(self.col_lines):
       col.set_value(1)
       for (j, row) in enumerate(self.row_lines):
         if row.get_value() == 1:
           col.set_value(0)
-          return names[i][j]
+          return (j, i)
         col.set_value(0)
-    return ""
+    return None
 
   def model_init(self) -> None:
     file_dir = os.path.split(__file__)[0]
@@ -221,24 +234,35 @@ class HWController(Controller):
     pass
 
   def get_card(self, player: Player) -> Optional[Card]:
-    # TODO: wait for button press
-    # don't look at image if they press button to not play a card
-    input('Click button to classify')
+    while val := self.keypad_read() != HWController.PLAY_TURN or HWController.SKIP_TURN:
+      pass
+    if val == HWController.SKIP_TURN:
+      return None
     image = self.cam_top.capture_array().astype(np.float32) / 255
     return card_from_classification(*get_card(self.model_top, self.model_color, image, True))
 
   def get_draw_card_response(self, player: Player, card: Card) -> bool:
-    # TODO: wait for button press
-    return False
+    while val := self.keypad_read() != HWController.PLAY_TURN or HWController.SKIP_TURN:
+      pass
+    return val == HWController.PLAY_TURN
 
   def get_bluff_answer(self, player: Player) -> bool:
-    # TODO: wait for button press
-    return False
+    while val := self.keypad_read() != HWController.CALL_BLUFF or HWController.NO_CALL_BLUFF:
+      pass
+    return val == HWController.CALL_BLUFF
 
   def get_color_choice(self, player: Player) -> Color:
-    # TODO: wait for button press
+    while val := self.keypad_read() != HWController.SET_RED or HWController.SET_BLUE or HWController.SET_GREEN or HWController.SET_GREEN:
+      pass
     # TODO: set led
-    return Color.RED
+    if val == HWController.SET_RED:
+      return Color.RED
+    elif val == HWController.SET_BLUE:
+      return Color.BLUE
+    elif val == HWController.SET_GREEN:
+      return Color.GREEN
+    else:
+      return Color.YELLOW
 
   def advance_turn(self, dir: int) -> None:
     self.ser.write(f'r{dir}\n'.encode("ascii"))
