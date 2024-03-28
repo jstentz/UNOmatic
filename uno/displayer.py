@@ -30,7 +30,7 @@ class Displayer:
     pass
 
   # signal that we have entered an invalid state
-  def signal_invalid_state(self) -> None:
+  def signal_invalid_state(self, state: UNO) -> None:
     pass
 
 
@@ -55,8 +55,9 @@ class TerminalDisplayer(Displayer):
     for player in state.players:
       print(player.hand)
   
-  def signal_invalid_state(self) -> None:
+  def signal_invalid_state(self, state: UNO) -> None:
     print('The board has entered an invalid state. Exiting...')
+    self.display_state(state)
     exit(1)
 
 
@@ -123,7 +124,7 @@ class TkDisplayer(Displayer):
       self._draw_card(top_card, self.width/2 - self.card_width/2, 1/12 * self.height)
       self.canvas.create_text(self.width / 2, 1/12 * self.height - 30, text='Top Card', font=('Purisa Bold', 20), fill=state.color.name)
     
-  def signal_invalid_state(self) -> None:
+  def signal_invalid_state(self, state: UNO) -> None:
     print('The board has entered an invalid state. Exiting...')
     exit(1)
     

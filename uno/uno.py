@@ -82,7 +82,7 @@ class UNO:
     selected_card = self.manager.get_card(curr_player)
 
     if selected_card is not None and selected_card not in curr_player.get_playable_cards(self.discard_pile.peek(), self.color):
-      self.manager.signal_invalid_state()
+      self.manager.signal_invalid_state(self)
 
     # if they give a card back, play it
     if selected_card is not None:
