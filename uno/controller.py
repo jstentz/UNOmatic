@@ -37,26 +37,26 @@ class Controller:
   # given a player, ask them for a card
   # here, None means they want to draw a card
   def get_card(self, player: Player) -> Optional[Card]:
-    pass
+    ...
 
   # get whether or not the player wants to play the card they were just dealt
   def get_draw_card_response(self, player: Player, card: Card) -> bool:
-    pass
+    ...
 
   def get_bluff_answer(self, player: Player) -> bool:
-    pass
+    ...
 
   def get_color_choice(self, player: Player) -> Color:
-    pass
+    ...
 
   # advance to the next player
   # dir is either +/- 1, depending on the direction 
   def advance_turn(self, dir: int) -> None:
-    pass
+    ...
 
   # here, I guess the software controller will have to maintain it's own draw deck in the controller
   def deal_card(self) -> Card:
-    pass
+    ...
   
   # gives the channel used for communication
   def get_channel(self) -> Queue:
