@@ -22,7 +22,7 @@ void setup() {
       ;
   }
   stepperMotor->release();
-  stepperMotor->setSpeed(70);
+  stepperMotor->setSpeed(60);
   dcMotor->run(RELEASE);
   dcMotor->setSpeed(255);
 }
@@ -40,7 +40,7 @@ void loop() {
         servo.detach();
 
         dcMotor->run(FORWARD);
-        delay(1000);
+        delay(700);
         dcMotor->run(RELEASE);
 
         // servo.attach(9);
@@ -54,11 +54,16 @@ void loop() {
         // delay(200);
         // servo.write(90);
         // servo.detach();
+    } else if (cmd == 'u') {
+        servo.attach(9);  // attaches the servo on pin 9 to the servo object
+        servo.write(180);
+        delay(500);
+        servo.detach();
     } else if (cmd == 'r') {  // rotate
       if (value) {
-        stepperMotor->step(199, FORWARD, DOUBLE);
+        stepperMotor->step(198, FORWARD, DOUBLE);
       } else {
-        stepperMotor->step(199, BACKWARD, DOUBLE);
+        stepperMotor->step(198, BACKWARD, DOUBLE);
       }
       stepperMotor->release();
     }
