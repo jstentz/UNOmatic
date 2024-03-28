@@ -54,9 +54,9 @@ def keypad_read(col_lines, row_lines):
         for (j, row) in enumerate(row_lines):
             if row.get_value() == 1:
                 col.set_value(0)
-                return names[i][j]
+                return (j,i)
         col.set_value(0)
-    return ""
+    return None
         
 
 def read():
@@ -91,7 +91,12 @@ def main():
         if cmd == "q":
             break
         else:
-            print(keypad_read(col_lines, row_lines))
+            while True:
+                val = keypad_read(col_lines, row_lines)
+                if val != None:
+                    print(val)
+                if val in [(0,0), (1,0)]:
+                    break
 
 if __name__ == "__main__":
     main()

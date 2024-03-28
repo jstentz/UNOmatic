@@ -220,7 +220,7 @@ class HWController(Controller):
         if row.get_value() == 1:
           col.set_value(0)
           return (j, i)
-        col.set_value(0)
+      col.set_value(0)
     return None
 
   def model_init(self) -> None:
@@ -234,25 +234,29 @@ class HWController(Controller):
     pass
 
   def get_card(self, player: Player) -> Optional[Card]:
-    while val := self.keypad_read() != HWController.PLAY_TURN or HWController.SKIP_TURN:
+    print("here")
+    while (val := self.keypad_read()) not in [HWController.PLAY_TURN, HWController.SKIP_TURN]:
+      if val != None:
+        print(val)
       pass
     if val == HWController.SKIP_TURN:
+      print("skip")
       return None
     image = self.cam_top.capture_array().astype(np.float32) / 255
     return card_from_classification(*get_card(self.model_top, self.model_color, image, True))
 
   def get_draw_card_response(self, player: Player, card: Card) -> bool:
-    while val := self.keypad_read() != HWController.PLAY_TURN or HWController.SKIP_TURN:
+    while (val := self.keypad_read()) not in [HWController.PLAY_TURN, HWController.SKIP_TURN]:
       pass
     return val == HWController.PLAY_TURN
 
   def get_bluff_answer(self, player: Player) -> bool:
-    while val := self.keypad_read() != HWController.CALL_BLUFF or HWController.NO_CALL_BLUFF:
+    while (val := self.keypad_read()) not in [HWController.PLAY_TURN, HWController.SKIP_TURN]:
       pass
     return val == HWController.CALL_BLUFF
 
   def get_color_choice(self, player: Player) -> Color:
-    while val := self.keypad_read() != HWController.SET_RED or HWController.SET_BLUE or HWController.SET_GREEN or HWController.SET_GREEN:
+    while (val := self.keypad_read()) not in [HWController.SET_RED, HWController.SET_BLUE, HWController.SET_GREEN, HWController.SET_GREEN]:
       pass
     # TODO: set led
     if val == HWController.SET_RED:
