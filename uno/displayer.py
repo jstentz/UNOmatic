@@ -50,6 +50,10 @@ class TerminalDisplayer(Displayer):
       print(f'Top card: {top_card}, Color: {color.name}')
     else:
       print(f'Top card: {top_card}')
+
+    # print everyone's hands  
+    for player in state.players:
+      print(player.hand)
   
   def signal_invalid_state(self) -> None:
     print('The board has entered an invalid state. Exiting...')

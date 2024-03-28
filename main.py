@@ -47,3 +47,11 @@ if __name__ == '__main__':
 
   game = UNO(manager=manager, num_players=args.num_players, hand_size=args.hand_size)
   game.start()
+
+
+
+'''
+TODO:
+ * add logging
+
+'''
