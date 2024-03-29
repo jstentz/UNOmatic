@@ -10,8 +10,6 @@ if TYPE_CHECKING:
   from uno.uno import UNO
   from uno.player import Player
 
-
-
 class Color(IntEnum):
   RED = 0
   YELLOW = 1

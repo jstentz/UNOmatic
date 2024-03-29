@@ -65,8 +65,8 @@ class TkDisplayer(Displayer):
   def __init__(self):
     self.window = tk.Tk()
     self.window.title('UNO!')
-    self.height = 1080
-    self.width = 1600
+    self.height = 720
+    self.width = 1280
     self.card_height = 150
     self.card_width = 100
     self.margin = 10
