@@ -60,7 +60,7 @@ void loop() {
         delay(500);
         servo.detach();
     } else if (cmd == 'r') {  // rotate
-      if (value) {
+      if (value == 1) {
         stepperMotor->step(198, FORWARD, DOUBLE);
       } else {
         stepperMotor->step(198, BACKWARD, DOUBLE);
