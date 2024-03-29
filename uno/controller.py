@@ -251,7 +251,7 @@ class HWController(Controller):
     return val == HWController.PLAY_TURN
 
   def get_bluff_answer(self, player: Player) -> bool:
-    while (val := self.keypad_read()) not in [HWController.PLAY_TURN, HWController.SKIP_TURN]:
+    while (val := self.keypad_read()) not in [HWController.CALL_BLUFF, HWController.NO_CALL_BLUFF]:
       pass
     return val == HWController.CALL_BLUFF
 

@@ -35,7 +35,7 @@ void loop() {
     if (cmd == 'd') {   // deal
         servo.attach(9);  // attaches the servo on pin 9 to the servo object
         servo.write(0);
-        delay(750);
+        delay(900);
         servo.write(90);
         servo.detach();
 
@@ -50,10 +50,6 @@ void loop() {
         //   servo.write(180);
         //   delay(150);
         // }
-        // servo.write(180);
-        // delay(200);
-        // servo.write(90);
-        // servo.detach();
     } else if (cmd == 'u') {
         servo.attach(9);  // attaches the servo on pin 9 to the servo object
         servo.write(180);
