@@ -6,10 +6,12 @@ Base class & implementations of the state displayer.
 # enables lazy type annotation resolving
 from __future__ import annotations
 
-from uno.card import Wild, PlusFour
-
 import tkinter as tk
-from uno.card import Card, Wild, PlusFour, Skip, Reverse, PlusTwo, Number
+from PIL import Image, ImageTk
+import os
+
+
+from uno.card import Card, Wild, PlusFour
 from uno.player import Player
 
 
@@ -72,26 +74,22 @@ class TkDisplayer(Displayer):
     self.margin = 10
     self.canvas = tk.Canvas(self.window, width=self.width, height=self.height)
     self.canvas.pack(fill=tk.BOTH, expand=tk.YES)
+
+    # fill a list of all card images
+    self.images: dict[str, ImageTk.PhotoImage] = {}
+
+    folder_path = os.path.join(os.path.dirname(__file__), 'images')
+    for file_name in os.listdir(folder_path):
+      path = os.path.join(folder_path, file_name)
+      self.images[file_name] = ImageTk.PhotoImage(Image.open(path).resize((self.card_width, self.card_height)))
+
     self.reset()
 
   def reset(self) -> None:
     pass
 
   def _draw_card(self, card: Card, sx: int, sy: int):
-    cx = sx + self.card_width / 2
-    cy = sy + self.card_height / 2
-    
-    # create the rectangle
-    card_color = card.color.name if card.color is not None else 'black'
-    self.canvas.create_rectangle(sx, sy, sx + self.card_width, sy + self.card_height, fill=card_color)
-
-    text_fill = 'black' if card_color == 'YELLOW' else 'white'
-
-    if type(card) == Number:
-      self.canvas.create_text(cx, cy, text=str(card.number), fill=text_fill, font=('Purisa Bold', 14))
-    else:
-      self.canvas.create_text(cx, cy, text=type(card).__name__, fill=text_fill, font=('Purisa Bold', 14))
-
+    self.canvas.create_image(sx, sy, anchor=tk.NW, image=self.images[card.image_name])
 
   def display_state(self, state: UNO) -> None:
     self.canvas.delete(tk.ALL)

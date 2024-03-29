@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Optional, Collection
 from enum import IntEnum
+import os
 
 # only import what we need if we are doing type checking
 from typing import TYPE_CHECKING
@@ -19,13 +20,20 @@ class Color(IntEnum):
 
 class Card:
   def __init__(self, color: Optional[Color], number: Optional[int]):
-    self.color = color
+    self.color: Color = color
     self.number = number
     self.type = type(self)
     
     # ensure that we've created a valid card
     if not self._validate():
       raise ValueError('Invalid card')
+    
+    # get the path to the image
+    if self.type in [PlusFour, Wild]:
+      self.image_name = f'{self.type.__name__.lower()}.png'
+    else:
+      self.image_name = f'{self.color.name.lower()}_{self.number if self.type == Number else self.type.__name__.lower()}.png'
+
 
   # ensures that we have valid entries for all cards
   def _validate(self) -> bool:
@@ -95,8 +103,8 @@ class PlusTwo(Card):
     state.go_next_player()
 
     # give them two cards
-    state.players[state.turn].receive_card(state.manager.deal_card())
-    state.players[state.turn].receive_card(state.manager.deal_card())
+    state.players[state.turn].receive_card(state.manager.deal_card(state.players[state.turn]))
+    state.players[state.turn].receive_card(state.manager.deal_card(state.players[state.turn]))
 
     # go to the next player
     state.go_next_player()
@@ -177,7 +185,7 @@ class PlusFour(Card):
 
       # draw 4 cards
       for _ in range(4):
-        state.players[state.turn].receive_card(state.manager.deal_card())
+        state.players[state.turn].receive_card(state.manager.deal_card(state.players[state.turn]))
 
       # progress to the next player
       state.go_next_player()
@@ -187,7 +195,7 @@ class PlusFour(Card):
       # this player must show their cards to the person calling the bluff
       # draw 6 cards for this player
       for _ in range(6):
-        state.players[state.turn].receive_card(state.manager.deal_card())
+        state.players[state.turn].receive_card(state.manager.deal_card(state.players[state.turn]))
 
       state.go_next_player()
 
@@ -195,7 +203,7 @@ class PlusFour(Card):
     else:
       # draw 4 cards for this player
       for _ in range(4):
-        state.players[state.turn].receive_card(state.manager.deal_card())
+        state.players[state.turn].receive_card(state.manager.deal_card(state.players[state.turn]))
 
       state.go_next_player()
 

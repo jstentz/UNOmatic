@@ -66,9 +66,8 @@ if __name__ == '__main__':
   displayers = [displayer_class() for displayer_class in displayer_classes]
   manager = Manager(controller, displayers, logger=logger)
 
-  game = UNO(manager=manager, num_players=args.num_players, hand_size=args.hand_size)
+  game = UNO(manager=manager, logger=logger, num_players=args.num_players, hand_size=args.hand_size)
   game.start()
-
 
 '''
 TODO:

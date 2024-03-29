@@ -4,7 +4,7 @@
 # num_rows = 7
 # num_cols = 10
 
-# image = cv.imread('images/UNO-Zeros.png')
+# image = cv.imread('images/UNO-Front.png')
 
 # width, height, channels = image.shape
 # card_width = width / num_cols
@@ -23,10 +23,10 @@
 #   # Find black pixels (where R, G, and B values are all 0)
 #   black_pixels = (r < 20) & (g < 20) & (b < 20)
 #   corner_pixels = np.zeros_like(black_pixels)
-#   corner_pixels[:int(card_height//8), :int(card_width//8)] = 1
-#   corner_pixels[:int(card_height//8), int(card_width*7//8):] = 1
-#   corner_pixels[int(card_height*7//8):, :int(card_width//8)] = 1
-#   corner_pixels[int(card_height*7//8):, int(card_width*7//8):] = 1
+#   corner_pixels[:int(card_height//16), :int(card_width//16)] = 1
+#   corner_pixels[:int(card_height//16), int(card_width*15//16):] = 1
+#   corner_pixels[int(card_height*15//16):, :int(card_width//16)] = 1
+#   corner_pixels[int(card_height*15//16):, int(card_width*15//16):] = 1
 
 #   # Set alpha channel value to 0 for black pixels
 #   a[np.logical_and(black_pixels, corner_pixels)] = 0
@@ -49,16 +49,16 @@
 # #     cv.imwrite(f'images/{color}_{num}.png', card_image)
 
 # # get others
-# row = 0
-# for col in range(4):
-#   color = colors[col % 4]
+# col = 9
+# for row in range(4):
+#   # color = colors[col % 4]
 #   sx = int(col * card_width)
 #   sy = int(row * card_height)
 #   ex = int((col + 1) * card_width)
 #   ey = int((row + 1) * card_height)
 #   card_image = image[sy:ey, sx:ex]
 #   card_image = transparent(card_image)
-#   cv.imwrite(f'images/{color}_test{col}.png', card_image)
+#   cv.imwrite(f'images/yuh_{row}.png', card_image)
 
 
 

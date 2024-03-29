@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Collection, Optional
 from queue import Queue # used for golang-style channels
 from threading import Thread
+import logging
 
 from uno.deck import Deck
 from uno.card import Color
@@ -17,7 +18,8 @@ from uno.player import Player
 from uno.manager import Manager
 
 class UNO:
-  def __init__(self, manager: Manager, num_players: int, hand_size: int = 7):
+  def __init__(self, manager: Manager, logger: logging.Logger, num_players: int, hand_size: int = 7):
+    self.logger = logger
     self.num_players: int = num_players
     self.hand_size: int = hand_size
     self._async_action_queue = manager.controller.get_channel()
@@ -28,7 +30,6 @@ class UNO:
     # set up the controller (terminal is default)
     self.manager = manager
     self.reset()
-
     
   def reset(self):
     self.manager.reset()
