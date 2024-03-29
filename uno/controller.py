@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from threading import Thread
 import time
 import numpy as np
 
@@ -182,13 +183,22 @@ class HWController(Controller):
 
   def ser_init(self) -> None:
     self.ser = serial.Serial("/dev/ttyACM0", 9600, timeout=10)
-    time.sleep(1)
+    time.sleep(2)
+    self.uart_queue = Queue()
+    self.uart_thread = Thread(target=self.ser_get)
+    self.uart_thread.daemon = True
+    self.uart_thread.start()
   
-  def ser_wait(self) -> str:
+  def ser_get(self) -> None:
     while True:
-        if self.ser.in_waiting > 0:
+        if self.ser.inWaiting() > 0:
             line = self.ser.readline().decode("ascii").strip()
-            return line
+            self.uart_queue.put(line, block=True)
+            continue
+        time.sleep(0.1)
+
+  def ser_wait(self) -> str:
+    return self.uart_queue.get()
 
 
   def cam_init(self) -> None:
@@ -234,13 +244,9 @@ class HWController(Controller):
     pass
 
   def get_card(self, player: Player) -> Optional[Card]:
-    print("here")
     while (val := self.keypad_read()) not in [HWController.PLAY_TURN, HWController.SKIP_TURN]:
-      if val != None:
-        print(val)
       pass
     if val == HWController.SKIP_TURN:
-      print("skip")
       return None
     image = self.cam_top.capture_array().astype(np.float32) / 255
     return card_from_classification(*get_card(self.model_top, self.model_color, image, True))

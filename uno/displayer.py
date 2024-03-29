@@ -74,6 +74,7 @@ class TkDisplayer(Displayer):
     self.margin = 10
     self.canvas = tk.Canvas(self.window, width=self.width, height=self.height)
     self.canvas.pack(fill=tk.BOTH, expand=tk.YES)
+    self.window.update_idletasks()
 
     # fill a list of all card images
     self.images: dict[str, ImageTk.PhotoImage] = {}
@@ -121,6 +122,7 @@ class TkDisplayer(Displayer):
     if top_card is not None:
       self._draw_card(top_card, self.width/2 - self.card_width/2, 1/12 * self.height)
       self.canvas.create_text(self.width / 2, 1/12 * self.height - 30, text='Top Card', font=('Purisa Bold', 20), fill=state.color.name)
+    self.window.update_idletasks()
     
   def signal_invalid_state(self, state: UNO) -> None:
     print('The board has entered an invalid state. Exiting...')
