@@ -13,6 +13,11 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog='main',
                                    description='UNO project for 18-500')
   
+  parser.add_argument('-l', '--log',
+                      help='enable logging',
+                      action='store_true',
+                      default=False)
+  
   parser.add_argument('--num_players',
                       help='the number of players in the UNO game',
                       type=int,
@@ -45,7 +50,7 @@ if __name__ == '__main__':
   displayers = [displayer_class() for displayer_class in displayer_classes]
   manager = Manager(controller, displayers)
 
-  game = UNO(manager=manager, num_players=args.num_players, hand_size=args.hand_size)
+  game = UNO(manager=manager, num_players=args.num_players, hand_size=args.hand_size, log=args.log)
   game.start()
 
 
@@ -53,5 +58,7 @@ if __name__ == '__main__':
 '''
 TODO:
  * add logging
+ * when player wins, it says it enters an invalid state
+ 
 
 '''

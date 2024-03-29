@@ -9,6 +9,9 @@ from __future__ import annotations
 from typing import Collection, Optional
 from queue import Queue # used for golang-style channels
 from threading import Thread
+import logging
+import os
+import datetime
 
 from uno.deck import Deck
 from uno.card import Color
@@ -17,7 +20,20 @@ from uno.player import Player
 from uno.manager import Manager
 
 class UNO:
-  def __init__(self, manager: Manager, num_players: int, hand_size: int = 7):
+  def __init__(self, manager: Manager, num_players: int, hand_size: int = 7, log: bool = False):
+    self.logger: logging.Logger = logging.Logger(__file__)
+    date_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    path = os.path.join(os.path.dirname(__file__), f'logs/log_{date_time}.log')
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    
+    if log:
+      file_handler = logging.FileHandler(path)
+      self.logger.addHandler(file_handler)
+      file_handler.setLevel(logging.DEBUG)
+      file_handler.setFormatter(formatter)
+    else:
+      self.logger.addHandler(logging.NullHandler())
+
     self.num_players: int = num_players
     self.hand_size: int = hand_size
     self._async_action_queue = manager.controller.get_channel()
@@ -28,6 +44,7 @@ class UNO:
     # set up the controller (terminal is default)
     self.manager = manager
     self.reset()
+
     
   def reset(self):
     self.manager.reset()
@@ -41,20 +58,30 @@ class UNO:
     self.turn: int = 0 # stores the index of the current player's turn
     self.dir: int = +1 # stores which direction the game is moving in 
 
+    self.logger.info('Dealing cards')
+
     # generate players and their hands
     self.players: Collection[Player] = []
-    
     # do the initial dealing phase
     for pos in range(self.num_players):
       # deal all the cards to this player
       self.players.append(Player([self.manager.deal_card() for _ in range(self.hand_size)], pos))
+
+      self.logger.info(f'DEALT\n{self.players[-1]}')
+
       # advance to the next player
       self.manager.advance_turn(self.dir)
 
+
+    self.logger.info('Finished dealing cards')
+
     # repeatedly check if we are drawing wilds or plus4s
     # if we are, put them on the discard pile
+
     while (initial_card := self.manager.deal_card()).type in [Wild, PlusFour]:
       self.discard_pile.push(initial_card)
+
+    self.logger.info(f'Dealt starting card [{initial_card}]')
 
     # we now have a non wild / plus4 card
     # play this card
@@ -66,22 +93,31 @@ class UNO:
   def start(self):
     # continue the game while everyone still has at least one card
     while not self.is_game_over():
+      self.logger.info('Starting turn')
+      self.logger.info(f'Top card: [{self.discard_pile.peek()}]')
     
       self.manager.display_state(self)
 
       # do one turn
       self.play_one_turn()
+      
+      self.logger.info('Ending turn')
+
+    self.logger.info('Game over!')
 
     # display the final game state
-    self.manager.display_state(self)    
+    self.manager.display_state(self)
 
   def play_one_turn(self):
     # ask the player for a card
     curr_player: Player = self.players[self.turn]
-
     selected_card = self.manager.get_card(curr_player)
+    playable_hand = curr_player.get_playable_cards(self.discard_pile.peek(), self.color)
 
-    if selected_card is not None and selected_card not in curr_player.get_playable_cards(self.discard_pile.peek(), self.color):
+    self.logger.info(f'\nFull hand:\n{curr_player}\nPlayable cards:\n{playable_hand}\nSelected card: [{selected_card}]')
+
+    if selected_card is not None and selected_card not in playable_hand:
+      self.logger.error(f'Invalid state. Terminating...')
       self.manager.signal_invalid_state(self)
 
     # if they give a card back, play it
@@ -97,7 +133,6 @@ class UNO:
     # otherwise, they should draw a card
     else:
       drawn_card = self.manager.deal_card()
-      print(f'Drawn card: {drawn_card}')
       # ask them if they want to play
       if drawn_card.is_playable(self.discard_pile.peek(), self.color) \
          and self.manager.get_draw_card_response(curr_player, drawn_card):
@@ -119,10 +154,12 @@ class UNO:
   
 
   def go_next_player(self) -> None:
+    self.logger.info('Go next player')
     self.manager.advance_turn(self.dir)
     self.turn = (self.turn + self.dir) % self.num_players
 
   def go_prev_player(self) -> None:
+    self.logger.info('Go prev player')
     self.manager.advance_turn(-self.dir)
     self.turn = (self.turn - self.dir) % self.num_players
 
