@@ -9,4 +9,4 @@ __pycache__/
 *_data*/
 uno.egg-info/
 models/
-logs/*
+logs/
