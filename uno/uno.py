@@ -109,8 +109,16 @@ class UNO:
     self.manager.display_state(self)
 
   def play_one_turn(self):
-    # ask the player for a card
     curr_player: Player = self.players[self.turn]
+
+    # if the player cannot play, just give them a card and return
+    if not curr_player.can_play(self.discard_pile.peek(), self.color):
+      drawn_card = self.manager.deal_card()
+      curr_player.receive_card(drawn_card)
+      self.go_next_player()
+      return
+
+    # ask the player for a card
     selected_card = self.manager.get_card(curr_player)
     playable_hand = curr_player.get_playable_cards(self.discard_pile.peek(), self.color)
 
