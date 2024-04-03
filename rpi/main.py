@@ -1,4 +1,4 @@
-from picamera2 import Picamera2
+from picamera2 import Picamera2, Preview
 from threading import Thread, Lock
 from queue import Queue
 import gpiod
@@ -120,6 +120,13 @@ def test_threading():
         print("wrote")
         print(get_line(queue))
 
+def preview_cam():
+    picam2 = Picamera2(0)
+    picam2.start()
+    cmd = input(">> ")
+
+
 if __name__ == "__main__":
     # main()
-    test_threading()
+    # test_threading()
+    preview_cam()

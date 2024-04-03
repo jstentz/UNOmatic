@@ -193,6 +193,7 @@ class HWController(Controller):
     while True:
         if self.ser.inWaiting() > 0:
             line = self.ser.readline().decode("ascii").strip()
+            print(line)
             self.uart_queue.put(line, block=True)
             continue
         time.sleep(0.1)
@@ -283,7 +284,26 @@ class HWController(Controller):
 
     self.ser.write("d\n".encode("ascii"))
     labels = get_card(self.model_bot, self.model_color, image, False)
-    _ = self.ser_wait()
+    if self.ser_wait() == "t":
+      card = card_from_classification(*labels)
+      print(card)
+      return card
+
+    for _ in range(2):
+      self.ser.write("u\n".encode("ascii"))
+      _ = self.ser_wait()
+      self.ser.write("u\n".encode("ascii"))
+      _ = self.ser_wait()
+      self.ser.write("d\n".encode("ascii"))
+      if self.ser_wait() == "t":
+        card = card_from_classification(*labels)
+        print(card)
+        return card
+      self.ser.write("u\n".encode("ascii"))
+      _ = self.ser_wait()     
+
+    while (val := self.keypad_read()) not in [HWController.PLAY_TURN]:
+      pass
 
     card = card_from_classification(*labels)
     print(card)
