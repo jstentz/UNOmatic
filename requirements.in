@@ -6,3 +6,4 @@ pandas
 wandb
 pyserial
 scikit-image
+flask
