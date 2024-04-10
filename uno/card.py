@@ -103,8 +103,8 @@ class PlusTwo(Card):
     state.go_next_player()
 
     # give them two cards
-    state.players[state.turn].receive_card(state.manager.deal_card(state.players[state.turn]))
-    state.players[state.turn].receive_card(state.manager.deal_card(state.players[state.turn]))
+    state.players[state.turn].receive_card(state.deal_card())
+    state.players[state.turn].receive_card(state.deal_card())
 
     # go to the next player
     state.go_next_player()
@@ -174,7 +174,6 @@ class PlusFour(Card):
     # ask them for a bluff answer
     next_player = state.players[state.turn]
     call_bluff = state.manager.get_bluff_answer(next_player)
-
 
     # we're guilty
     if call_bluff and has_other_options:

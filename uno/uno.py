@@ -9,35 +9,37 @@ from __future__ import annotations
 from typing import Collection, Optional
 from queue import Queue # used for golang-style channels
 from threading import Thread
+from enum import Enum
 import logging
 
 from uno.deck import Deck
 from uno.card import Color
 from uno.card import Card, Wild, PlusFour
 from uno.player import Player
-from uno.manager import Manager
+from uno.requests import *
 
 class UNO:
-  def __init__(self, manager: Manager, logger: logging.Logger, num_players: int, hand_size: int = 7):
-    self.logger = logger
-    self.num_players: int = num_players
-    self.hand_size: int = hand_size
-    self._async_action_queue = manager.controller.get_channel()
-    self._async_thread = Thread(target=self._action_handler)
-    self._async_thread.daemon = True # kill the thread when the process dies
-    self._async_thread.start()
-    
-    # set up the controller (terminal is default)
-    self.manager = manager
-    self.reset()
-    
-  def reset(self):
-    self.manager.reset()
 
-    # empty the action queue
-    while not self._async_action_queue.empty():
-      self._async_action_queue.get_nowait()
+  class State(Enum):
+    INIT_PHASE = 0
+    PLAY_CARD_PHASE = 
 
+
+
+
+  def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request]):
+    self._input_queue = input_queue # requests coming in from the manager or internally
+    self._output_queue = output_queue # requests going out to the manager 
+    self._main_loop_thread = Thread(target=self._main_loop, daemon=True)
+    self.init_phase = True
+
+  def start(self):
+    self._main_loop_thread.start()
+    
+  def reset(self, request: Reset):
+
+    self.hand_size: int = 7
+    self.num_players: int = 4
     self.discard_pile: Deck = Deck(0)
     self.color: Optional[Color] = None # this is extra info for when the top card is wild or plus4
     self.turn: int = 0 # stores the index of the current player's turn
@@ -47,97 +49,110 @@ class UNO:
     self.players: Collection[Player] = [Player([], pos) for pos in range(self.num_players)]
 
     # do the initial dealing phase
+
     for pos in range(self.num_players):
       # deal all the cards to this player
       # self.players.append(Player([self.manager.deal_card() for _ in range(self.hand_size)], pos))
       for _ in range(self.hand_size):
         player = self.players[pos]
-        card = self.manager.deal_card(player)
-        player.receive_card(card)
+        self._output_queue.put(DealCard(player))
+      self.go_next_player()
 
-      # advance to the next player
-      self.manager.advance_turn(self.dir)
 
-    # repeatedly check if we are drawing wilds or plus4s
-    # if we are, put them on the discard pile
+    while True:
+      request = self._input_queue.get()
 
-    while (initial_card := self.manager.deal_card(None)).type in [Wild, PlusFour]:
-      self.discard_pile.push(initial_card)
+      if type(request) is Reset:
+        self.reset(request)
 
-    # we now have a non wild / plus4 card
-    # play this card
-    initial_card.play_card(self)
+      elif type(request) is DealtCard:
+        player = request.player
+        player.receive_card(request.card)
+
+      # TODO: handle state corrections
+
+  
+    # do the initial dealing phase
+    # for pos in range(self.num_players):
+    #   # deal all the cards to this player
+    #   # self.players.append(Player([self.manager.deal_card() for _ in range(self.hand_size)], pos))
+    #   for _ in range(self.hand_size):
+    #     player = self.players[pos]
+    #     dealt_card = self.deal_card()
+    #     print(f'dealt_card: {dealt_card}')
+    #     player.receive_card(dealt_card)
+
+    #   # advance to the next player
+    #   self.go_next_player()
+
+    # # repeatedly check if we are drawing wilds or plus4s
+    # # if we are, put them on the discard pile
+
+    # while (initial_card := self.deal_card()).type in [Wild, PlusFour]:
+    #   self.discard_pile.push(initial_card)
+
+    # # we now have a non wild / plus4 card
+    # # play this card
+    # initial_card.play_card(self)
+
+  def _main_loop(self):
+    while True:
+      request = self._input_queue.get()
+
+      if type(request) is Reset:
+        self.reset(request)
 
   def is_game_over(self):
     return any(map(lambda p: p.hand == [], self.players))
-    
-  def start(self):
-    # continue the game while everyone still has at least one card
-    while not self.is_game_over():
-      self.manager.display_state(self)
 
-      # do one turn
-      self.play_one_turn()
+  # def play_one_turn(self):
+  #   curr_player: Player = self.players[self.turn]
 
-    # display the final game state
-    self.manager.display_state(self)
+  #   # if the player cannot play, just give them a card and return
+  #   # if not curr_player.can_play(self.discard_pile.peek(), self.color):
+  #   #   drawn_card = self.manager.deal_card(curr_player)
+  #   #   curr_player.receive_card(drawn_card)
+  #   #   self.go_next_player()
+  #   #   return
 
-  def play_one_turn(self):
-    curr_player: Player = self.players[self.turn]
+  #   # ask the player for a card
+  #   selected_card = self.manager.get_card(curr_player)
+  #   playable_hand = curr_player.get_playable_cards(self.discard_pile.peek(), self.color)
 
-    # if the player cannot play, just give them a card and return
-    # if not curr_player.can_play(self.discard_pile.peek(), self.color):
-    #   drawn_card = self.manager.deal_card(curr_player)
-    #   curr_player.receive_card(drawn_card)
-    #   self.go_next_player()
-    #   return
+  #   if selected_card is not None and selected_card not in playable_hand:
+  #     self.manager.signal_invalid_state(self)
 
-    # ask the player for a card
-    selected_card = self.manager.get_card(curr_player)
-    playable_hand = curr_player.get_playable_cards(self.discard_pile.peek(), self.color)
+  #   # if they give a card back, play it
+  #   if selected_card is not None:
+  #     selected_card.play_card(self)
 
-    if selected_card is not None and selected_card not in playable_hand:
-      self.manager.signal_invalid_state(self)
-
-    # if they give a card back, play it
-    if selected_card is not None:
-      selected_card.play_card(self)
-
-      # TODO: this validation should probably happen inside the player class
-      # TODO: there should still be stuff in the player, this shouldn't be here
-      # remove the card from the player's hand
-      curr_player.hand.remove(selected_card)
-      curr_player._sort_hand()
+  #     # TODO: this validation should probably happen inside the player class
+  #     # TODO: there should still be stuff in the player, this shouldn't be here
+  #     # remove the card from the player's hand
+  #     curr_player.hand.remove(selected_card)
+  #     curr_player._sort_hand()
       
-    # otherwise, they should draw a card
-    else:
-      drawn_card = self.manager.deal_card(curr_player)
-      # ask them if they want to play
-      if drawn_card.is_playable(self.discard_pile.peek(), self.color) \
-         and self.manager.get_draw_card_response(curr_player, drawn_card):
-        # play the card
-        drawn_card.play_card(self)
-      else:
-        # otherwise, put the card in their hand
-        curr_player.receive_card(drawn_card)
+  #   # otherwise, they should draw a card
+  #   else:
+  #     drawn_card = self.manager.deal_card(curr_player)
+  #     # ask them if they want to play
+  #     if drawn_card.is_playable(self.discard_pile.peek(), self.color) \
+  #        and self.manager.get_draw_card_response(curr_player, drawn_card):
+  #       # play the card
+  #       drawn_card.play_card(self)
+  #     else:
+  #       # otherwise, put the card in their hand
+  #       curr_player.receive_card(drawn_card)
 
-        # advance the turn
-        self.go_next_player()
-
-  def _action_handler(self) -> None:
-    # while not self.is_game_over():
-    while True:
-      # grab an action (blocks until something is on the queue)
-      action = self._async_action_queue.get()
-      print(action)
+  #       # advance the turn
+  #       self.go_next_player()
   
-
   def go_next_player(self) -> None:
-    self.manager.advance_turn(self.dir)
+    self._output_queue.put(GoNextPlayer(self.dir))
     self.turn = (self.turn + self.dir) % self.num_players
 
   def go_prev_player(self) -> None:
-    self.manager.advance_turn(-self.dir)
+    self._output_queue.put(GoNextPlayer(-self.dir))
     self.turn = (self.turn - self.dir) % self.num_players
 
   def reverse(self) -> None:

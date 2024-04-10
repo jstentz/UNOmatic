@@ -2,6 +2,7 @@ import argparse
 import os
 import logging
 import datetime
+import time
 
 from uno.uno import UNO
 from uno.manager import Manager
@@ -10,6 +11,20 @@ from uno import NAME_TO_CONTROLLER, NAME_TO_DISPLAYER
 def print_example_usage():
   print("Example usage:")
   print("python", os.path.basename(__file__), '-c', 'TerminalController', '-d', 'TkDisplayer', 'TerminalDisplayer')
+
+
+# testing
+from queue import Queue
+from uno.controller import TerminalController
+from uno.manager import Manager
+from uno.requests import PlayCard, GetUserInput, Reset
+
+if __name__ == '__main__':
+  manager = Manager(TerminalController, [])
+  manager.start()
+
+
+exit()
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog='main',
