@@ -11,6 +11,14 @@ if TYPE_CHECKING:
   from uno.uno import UNO
   from uno.player import Player
 
+from uno.requests import *
+
+'''
+what if the play_card is spawned on a thread and a channel is given to it 
+to listen on... then we can have the main thread redirect only the requests that matter
+can also send quit requests to the card so that it returns 
+'''
+
 class Color(IntEnum):
   RED = 0
   YELLOW = 1
@@ -100,11 +108,15 @@ class PlusTwo(Card):
     state.color = self.color
 
     # advance to the next player
-    state.go_next_player()
+    state.go_next_player(is_turn_end=False)
 
-    # give them two cards
-    state.players[state.turn].receive_card(state.deal_card())
-    state.players[state.turn].receive_card(state.deal_card())
+    # deal two cards to the player
+    curr_player: Player = state.players[state.turn]
+    if (received_request := state.transaction_sync(DealCard(curr_player))) is None: return
+    curr_player.receive_card(received_request.card)
+    if (received_request := state.transaction_sync(DealCard(curr_player))) is None: return
+    curr_player.receive_card(received_request.card)
+
 
     # go to the next player
     state.go_next_player()
@@ -124,7 +136,7 @@ class Skip(Card):
     state.color = self.color
 
     # skip a player
-    state.go_next_player()
+    state.go_next_player(is_turn_end=False)
     state.go_next_player()
 
 class Reverse(Card):
@@ -166,10 +178,13 @@ class PlusFour(Card):
     state.discard_pile.push(self)
 
     # ask the user for a color
+    if (received_request := state.transaction_sync(GetUserInput([])))
+
     state.color = state.manager.get_color_choice(player)
+    
 
     # go the next player
-    state.go_next_player()
+    state.go_next_player(is_turn_end=False)
 
     # ask them for a bluff answer
     next_player = state.players[state.turn]

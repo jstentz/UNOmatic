@@ -12,6 +12,7 @@ class Player:
     self.hand = hand
     self.position = position
     self.name = name if name is not None else f'Player {position}'
+    self.has_called_uno = False
 
     # sort the hand
     self._sort_hand()

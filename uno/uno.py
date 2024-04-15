@@ -20,23 +20,22 @@ from uno.requests import *
 
 class UNO:
 
-  class State(Enum):
-    INIT_PHASE = 0
-    PLAY_CARD_PHASE = 
-
-
-
-
   def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request]):
     self._input_queue = input_queue # requests coming in from the manager or internally
     self._output_queue = output_queue # requests going out to the manager 
+    self._internal_queue = Queue() # this queue is for passing messages in between card threads and the main thread
     self._main_loop_thread = Thread(target=self._main_loop, daemon=True)
+    self._card_player_thread: Optional[Thread] = None
     self.init_phase = True
 
   def start(self):
     self._main_loop_thread.start()
     
   def reset(self, request: Reset):
+    # check to see if there is a lingering card player thread
+    if self._card_player_thread is not None and self._card_player_thread.is_alive():
+      self._internal_queue.put(request)
+      self._card_player_thread.join()
 
     self.hand_size: int = 7
     self.num_players: int = 4
@@ -49,7 +48,6 @@ class UNO:
     self.players: Collection[Player] = [Player([], pos) for pos in range(self.num_players)]
 
     # do the initial dealing phase
-
     for pos in range(self.num_players):
       # deal all the cards to this player
       # self.players.append(Player([self.manager.deal_card() for _ in range(self.hand_size)], pos))
@@ -58,42 +56,33 @@ class UNO:
         self._output_queue.put(DealCard(player))
       self.go_next_player()
 
+    # deal one card to be the top card of the deck
+    self._output_queue.put(DealCard(player=None))
 
+    # wait until we have dealt the correct number of cards
+    initial_card = None
     while True:
       request = self._input_queue.get()
 
       if type(request) is Reset:
         self.reset(request)
 
-      elif type(request) is DealtCard:
+      # we dealt a card to a specific player
+      elif type(request) is DealtCard and request.player is not None:
         player = request.player
         player.receive_card(request.card)
 
+      # this is the initial card
+      elif type(request) is DealtCard and request.player is None:
+        initial_card = request.card
+        if initial_card.type in [Wild, PlusFour]:
+          self._output_queue.put(DealCard(player=None))
+        else:
+          # TODO: play the initial card here?
+          break
       # TODO: handle state corrections
+      
 
-  
-    # do the initial dealing phase
-    # for pos in range(self.num_players):
-    #   # deal all the cards to this player
-    #   # self.players.append(Player([self.manager.deal_card() for _ in range(self.hand_size)], pos))
-    #   for _ in range(self.hand_size):
-    #     player = self.players[pos]
-    #     dealt_card = self.deal_card()
-    #     print(f'dealt_card: {dealt_card}')
-    #     player.receive_card(dealt_card)
-
-    #   # advance to the next player
-    #   self.go_next_player()
-
-    # # repeatedly check if we are drawing wilds or plus4s
-    # # if we are, put them on the discard pile
-
-    # while (initial_card := self.deal_card()).type in [Wild, PlusFour]:
-    #   self.discard_pile.push(initial_card)
-
-    # # we now have a non wild / plus4 card
-    # # play this card
-    # initial_card.play_card(self)
 
   def _main_loop(self):
     while True:
@@ -104,6 +93,15 @@ class UNO:
 
   def is_game_over(self):
     return any(map(lambda p: p.hand == [], self.players))
+  
+  
+  def transaction_sync(self, request: Request) -> Optional[Request]:
+    # send out the request
+    self._output_queue.put(request)
+    # wait on the internal queue for card-related requests (or reset)
+    received_request = self._internal_queue.get()
+    return None if type(received_request) is Reset else received_request
+
 
   # def play_one_turn(self):
   #   curr_player: Player = self.players[self.turn]
@@ -147,9 +145,24 @@ class UNO:
   #       # advance the turn
   #       self.go_next_player()
   
-  def go_next_player(self) -> None:
+  def go_next_player(self, is_turn_end: bool = True) -> None:
     self._output_queue.put(GoNextPlayer(self.dir))
+    prev_turn = self.turn
     self.turn = (self.turn + self.dir) % self.num_players
+
+    # check to see what we should listen for 
+    if is_turn_end:
+      curr_player = self.players[self.turn]
+      prev_player = self.players[prev_turn]
+
+      request_list = [PlayCard, SkipTurn]
+      
+      if len(curr_player.hand) == 2:
+        request_list.append(CallUNO)
+
+      if 
+
+      self._output_queue.put(GetUserInput([CallUNO, UNOFail, ]))
 
   def go_prev_player(self) -> None:
     self._output_queue.put(GoNextPlayer(-self.dir))
@@ -157,6 +170,9 @@ class UNO:
 
   def reverse(self) -> None:
     self.dir = -self.dir
+
+  def player_has_uno(self) -> bool:
+    return [player for player in self.players if len(player.hand) == 1] != [ ] 
 
   def __del__(self) -> None:
     # TODO: send a signal to self to end the thread
