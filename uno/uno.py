@@ -38,15 +38,18 @@ class UNO:
       self._internal_queue.put(request)
       self._sequence_thread.join()
 
-    self.hand_size: int = 7
+    self.hand_size: int = 3
     self.num_players: int = 4
     self.discard_pile: Deck = Deck(0)
     self.color: Optional[Color] = None # this is extra info for when the top card is wild or plus4
     self.turn: int = 0 # stores the index of the current player's turn
     self.dir: int = +1 # stores which direction the game is moving in 
 
-    # stores who is punishable for not calling
-    self.is_uno_punishable: Optional[int] = None
+    # person who needs to call UNO
+    self.call_uno_player: Optional[int] = None
+
+    # stores who is punishable for not calling uno
+    self.uno_fail_player: Optional[int] = None
 
     # generate players with empty hands
     self.players: Collection[Player] = [Player([], pos) for pos in range(self.num_players)]
@@ -71,11 +74,12 @@ class UNO:
         if request.for_drawn_card:
           self._internal_queue.put(request)
           continue
-
       elif type(request) in [PlayCard, CallUNO]:
-        if type(request) is CallUNO:
-          self.is_uno_punishable = None
 
+        self.uno_fail_player = None
+        if type(request) is CallUNO:
+          self.call_uno_player = None
+          
         # reap the thread 
         if self._sequence_thread: self._sequence_thread.join() 
         
@@ -96,10 +100,21 @@ class UNO:
 
         # handle the sequence of actions caused by this card
         self._sequence_thread.start()
+      elif type(request) is UNOFail:
+        # punish this player
+        if self._sequence_thread: self._sequence_thread.join()
+
+        self._sequence_thread = Thread(target=self.run_uno_fail, daemon=True)
+
+        self._sequence_thread.start()
 
       elif type(request) is SkipTurn:
-        # TODO: spawn thread to handle this transaction
         if self._sequence_thread: self._sequence_thread.join() 
+
+        self.uno_fail_player = None
+
+        if len(self.players[self.turn].hand) == 1:
+          self.call_uno_player = self.turn
 
         self._sequence_thread = Thread(target=self.run_skip_turn, daemon=True)
 
@@ -146,7 +161,7 @@ class UNO:
 
       request_list = [PlayCard, SkipTurn]
 
-      if len(curr_player.hand) == 1:
+      if self.call_uno_player is not None:
         request_list.append(CallUNO)
 
       while True:
@@ -155,9 +170,13 @@ class UNO:
           # add the card to their hand 
           curr_player.receive_card(received_card)
           curr_player._sort_hand()
+          self.call_uno_player = None
           self.go_next_player()
           break
         elif received_request.card == received_card:
+          if type(received_request) is CallUNO:
+            self.call_uno_player = None
+          
           # play the card
           received_card.play_card(self)
           break
@@ -168,6 +187,36 @@ class UNO:
       curr_player.receive_card(received_request.card)
       curr_player._sort_hand()
       self.go_next_player()
+
+  # punish the player at position pos
+  def run_uno_fail(self):
+
+    pos = self.uno_fail_player
+    self.uno_fail_player = None
+    
+    assert(self.turn != pos)
+
+    count = 0
+    while self.turn != pos:
+      count += 1
+      self.go_prev_player()
+
+    # punish player with 4 cards
+    curr_player: Player = self.players[self.turn]
+    for _ in range(4):
+      if (received_request := self.transaction_sync(DealCard(curr_player))) is None: return
+      curr_player.receive_card(received_request.card)
+    
+    for _ in range(count):
+      self.go_next_player(is_turn_end=False)
+
+    request_list = [PlayCard, SkipTurn]
+
+    if self.call_uno_player is not None:
+      request_list.append(CallUNO)
+
+    self._output_queue.put(GetUserInput(request_list))
+    
 
   # performs a synchronous transaction 
   def transaction_sync(self, request: Request) -> Optional[Request]:
@@ -191,12 +240,14 @@ class UNO:
     if is_turn_end:
       curr_player = self.players[self.turn]
       request_list = [PlayCard, SkipTurn]
-      
-      if self.is_uno_punishable is not None:
+
+      if self.call_uno_player is not None:
+        self.uno_fail_player = self.call_uno_player
+        self.call_uno_player = None
         request_list.append(UNOFail)
-      
+
       if len(curr_player.hand) == 2:
-        self.is_uno_punishable = self.turn
+        self.call_uno_player = self.turn
         request_list.append(CallUNO)
 
       self._output_queue.put(GetUserInput(request_list))

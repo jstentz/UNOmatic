@@ -414,6 +414,11 @@ class TerminalController(Controller):
       return Bluff(True)
     elif cmd == 'no_bluff':
       return Bluff(False)
+    elif cmd == 'uno':
+      card = card_from_string(*rest)
+      return CallUNO(card)
+    elif cmd == 'uno_fail':
+      return UNOFail()
 
   def _input_listener(self):
     while True:
@@ -421,6 +426,8 @@ class TerminalController(Controller):
       request = self._listener_queue.get()
       allowed_input_types = request.request_types
       for_drawn_card = request.for_drawn_card
+
+      # print(f'Listening for: {[allowed_type.__name__ for allowed_type in allowed_input_types]}')
 
       # clear the buffer 
       while TerminalController.is_input_available():
