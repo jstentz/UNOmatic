@@ -25,17 +25,18 @@ class UNO:
     self._output_queue = output_queue # requests going out to the manager 
     self._internal_queue = Queue() # this queue is for passing messages in between card threads and the main thread
     self._main_loop_thread = Thread(target=self._main_loop, daemon=True)
-    self._card_player_thread: Optional[Thread] = None
-    self.init_phase = True
+
+    # this thread is basically a sequence runner 
+    self._sequence_thread: Optional[Thread] = None
 
   def start(self):
     self._main_loop_thread.start()
     
   def reset(self, request: Reset):
     # check to see if there is a lingering card player thread
-    if self._card_player_thread is not None and self._card_player_thread.is_alive():
+    if self._sequence_thread is not None and self._sequence_thread.is_alive():
       self._internal_queue.put(request)
-      self._card_player_thread.join()
+      self._sequence_thread.join()
 
     self.hand_size: int = 7
     self.num_players: int = 4
@@ -44,45 +45,18 @@ class UNO:
     self.turn: int = 0 # stores the index of the current player's turn
     self.dir: int = +1 # stores which direction the game is moving in 
 
+    # stores who is punishable
+    self.is_uno_punishable: Optional[int] = None
+
     # generate players with empty hands
     self.players: Collection[Player] = [Player([], pos) for pos in range(self.num_players)]
 
-    # do the initial dealing phase
-    for pos in range(self.num_players):
-      # deal all the cards to this player
-      # self.players.append(Player([self.manager.deal_card() for _ in range(self.hand_size)], pos))
-      for _ in range(self.hand_size):
-        player = self.players[pos]
-        self._output_queue.put(DealCard(player))
-      self.go_next_player()
 
-    # deal one card to be the top card of the deck
-    self._output_queue.put(DealCard(player=None))
+    self._sequence_thread = Thread(target=self.run_init_phase, daemon=True)
 
-    # wait until we have dealt the correct number of cards
-    initial_card = None
-    while True:
-      request = self._input_queue.get()
-
-      if type(request) is Reset:
-        self.reset(request)
-
-      # we dealt a card to a specific player
-      elif type(request) is DealtCard and request.player is not None:
-        player = request.player
-        player.receive_card(request.card)
-
-      # this is the initial card
-      elif type(request) is DealtCard and request.player is None:
-        initial_card = request.card
-        if initial_card.type in [Wild, PlusFour]:
-          self._output_queue.put(DealCard(player=None))
-        else:
-          # TODO: play the initial card here?
-          break
-      # TODO: handle state corrections
-      
-
+    # handle the sequence of actions to init the game
+    self._sequence_thread.start()
+    
 
   def _main_loop(self):
     while True:
@@ -90,9 +64,52 @@ class UNO:
 
       if type(request) is Reset:
         self.reset(request)
+      elif type(request) in [CurrentState, CorrectedState]:
+        # TODO: handle these requests
+        pass
+      elif type(request) in [PlayCard, CallUNO]:
+        # make sure there isn't another card being played (there shouldn't be lil bro)
+        # reap the thread 
+        self._sequence_thread.join() 
+        print('here')
+        
+        card = request.card
+        self._sequence_thread = Thread(target=card.play_card, args=(self,), daemon=True)
+
+        # handle the sequence of actions caused by this card
+        self._sequence_thread.start()
+
+      elif type(request) is SkipTurn:
+        # TODO: spawn thread to handle this transaction
+        pass
+      else:
+        # forward along to card handler
+        self._internal_queue.put(request)
 
   def is_game_over(self):
     return any(map(lambda p: p.hand == [], self.players))
+  
+  def run_init_phase(self):
+    for pos in range(self.num_players):
+      curr_player: Player = self.players[pos]
+      # deal all the cards to this player
+      for _ in range(self.hand_size):
+        if (received_request := self.transaction_sync(DealCard(curr_player))) is None: return
+        curr_player.receive_card(received_request.card)
+        
+      self.go_next_player(is_turn_end=False)
+
+    # get the initial card
+    while True:
+      if (received_request := self.transaction_sync(DealCard(player=None))) is None: return
+      if type(received_request.card) not in [Wild, PlusFour]:
+        break
+    
+    print(received_request.card)
+    received_request.card.play_card(self)
+
+
+    
   
   
   def transaction_sync(self, request: Request) -> Optional[Request]:
@@ -102,53 +119,16 @@ class UNO:
     received_request = self._internal_queue.get()
     return None if type(received_request) is Reset else received_request
 
-
-  # def play_one_turn(self):
-  #   curr_player: Player = self.players[self.turn]
-
-  #   # if the player cannot play, just give them a card and return
-  #   # if not curr_player.can_play(self.discard_pile.peek(), self.color):
-  #   #   drawn_card = self.manager.deal_card(curr_player)
-  #   #   curr_player.receive_card(drawn_card)
-  #   #   self.go_next_player()
-  #   #   return
-
-  #   # ask the player for a card
-  #   selected_card = self.manager.get_card(curr_player)
-  #   playable_hand = curr_player.get_playable_cards(self.discard_pile.peek(), self.color)
-
-  #   if selected_card is not None and selected_card not in playable_hand:
-  #     self.manager.signal_invalid_state(self)
-
-  #   # if they give a card back, play it
-  #   if selected_card is not None:
-  #     selected_card.play_card(self)
-
-  #     # TODO: this validation should probably happen inside the player class
-  #     # TODO: there should still be stuff in the player, this shouldn't be here
-  #     # remove the card from the player's hand
-  #     curr_player.hand.remove(selected_card)
-  #     curr_player._sort_hand()
-      
-  #   # otherwise, they should draw a card
-  #   else:
-  #     drawn_card = self.manager.deal_card(curr_player)
-  #     # ask them if they want to play
-  #     if drawn_card.is_playable(self.discard_pile.peek(), self.color) \
-  #        and self.manager.get_draw_card_response(curr_player, drawn_card):
-  #       # play the card
-  #       drawn_card.play_card(self)
-  #     else:
-  #       # otherwise, put the card in their hand
-  #       curr_player.receive_card(drawn_card)
-
-  #       # advance the turn
-  #       self.go_next_player()
   
   def go_next_player(self, is_turn_end: bool = True) -> None:
     self._output_queue.put(GoNextPlayer(self.dir))
     prev_turn = self.turn
     self.turn = (self.turn + self.dir) % self.num_players
+
+    # debugging: print out the state
+    if is_turn_end:
+      print(self)
+
 
     # check to see what we should listen for 
     if is_turn_end:
@@ -158,11 +138,11 @@ class UNO:
       request_list = [PlayCard, SkipTurn]
       
       if len(curr_player.hand) == 2:
+        # self.is_uno_punishable = 
+        # TODO: fix using this flag
         request_list.append(CallUNO)
 
-      if 
-
-      self._output_queue.put(GetUserInput([CallUNO, UNOFail, ]))
+      self._output_queue.put(GetUserInput(request_list))
 
   def go_prev_player(self) -> None:
     self._output_queue.put(GoNextPlayer(-self.dir))
@@ -171,12 +151,23 @@ class UNO:
   def reverse(self) -> None:
     self.dir = -self.dir
 
-  def player_has_uno(self) -> bool:
-    return [player for player in self.players if len(player.hand) == 1] != [ ] 
+  # def player_has_uno(self) -> bool:
+  #   return [player for player in self.players if len(player.hand) == 1] != [ ] 
 
   def __del__(self) -> None:
     # TODO: send a signal to self to end the thread
     pass
 
   def __repr__(self) -> str:
-    return ''
+    res = f'Top card: {self.discard_pile.peek()}, Color: {self.color}\n'
+
+    curr_player = self.players[self.turn]
+    res += str(curr_player)
+    return res
+
+'''
+Add a button that means "playing with UNO call"
+
+Add "player_that_can_be_bluffed" to the state (UNO VICTIM)
+
+'''

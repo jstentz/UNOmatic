@@ -99,7 +99,7 @@ from typing import Collection
 class Manager:
   # TODO: add info about state correction from displayers
   TO_CONTROLLER = [GoNextPlayer, DealCard, GetUserInput]
-  TO_STATE = [PlayCard, DealtCard, SkipTurn, SetColor, Bluff, CallUNO, UNOFail]
+  TO_STATE = [PlayCard, DealtCard, SkipTurn, SetColor, Bluff, CallUNO, UNOFail, CorrectedState]
   TO_DISPLAYERS = [CurrentState]
 
   def __init__(self, controller_type: type[Controller], displayer_types: Collection[type[Displayer]]) -> None:
@@ -120,6 +120,8 @@ class Manager:
     # TODO: start the displayer
 
     # DEBUGGING LIL BRO LMAO
+
+    # reset the game at the start
     self.state_queue.put(Reset())
 
     # main control flow loop

@@ -10,6 +10,7 @@ def card_from_string(color: str, card_type: str) -> Card:
     card = card_types_map[card_type](color)
   else:
     card = Number(color, int(card_type))
+  return card
 
 def color_from_string(color: str):
   return None if color == 'None' else Color[color]

@@ -178,17 +178,18 @@ class PlusFour(Card):
     state.discard_pile.push(self)
 
     # ask the user for a color
-    if (received_request := state.transaction_sync(GetUserInput([])))
-
-    state.color = state.manager.get_color_choice(player)
+    if (received_request := state.transaction_sync(GetUserInput([SetColor]))) is None: return
+    state.color = received_request.color
     
 
     # go the next player
     state.go_next_player(is_turn_end=False)
 
     # ask them for a bluff answer
-    next_player = state.players[state.turn]
-    call_bluff = state.manager.get_bluff_answer(next_player)
+    # next_player = state.players[state.turn]
+
+    if (received_request := state.transaction_sync(GetUserInput([Bluff]))) is None: return
+    call_bluff = received_request.is_bluff
 
     # we're guilty
     if call_bluff and has_other_options:
@@ -199,7 +200,9 @@ class PlusFour(Card):
 
       # draw 4 cards
       for _ in range(4):
-        state.players[state.turn].receive_card(state.manager.deal_card(state.players[state.turn]))
+        curr_player = state.players[state.turn]
+        if (received_request := state.transaction_sync(DealCard(curr_player))) is None: return
+        curr_player.receive_card(received_request.card)
 
       # progress to the next player
       state.go_next_player()
@@ -209,7 +212,9 @@ class PlusFour(Card):
       # this player must show their cards to the person calling the bluff
       # draw 6 cards for this player
       for _ in range(6):
-        state.players[state.turn].receive_card(state.manager.deal_card(state.players[state.turn]))
+        curr_player = state.players[state.turn]
+        if (received_request := state.transaction_sync(DealCard(curr_player))) is None: return
+        curr_player.receive_card(received_request.card)
 
       state.go_next_player()
 
@@ -217,7 +222,9 @@ class PlusFour(Card):
     else:
       # draw 4 cards for this player
       for _ in range(4):
-        state.players[state.turn].receive_card(state.manager.deal_card(state.players[state.turn]))
+        curr_player = state.players[state.turn]
+        if (received_request := state.transaction_sync(DealCard(curr_player))) is None: return
+        curr_player.receive_card(received_request.card)
 
       state.go_next_player()
 
@@ -234,7 +241,9 @@ class Wild(Card):
     state.discard_pile.push(self)
 
     # ask the user for a color
-    state.color = state.manager.get_color_choice(state.players[state.turn])
+    # curr_player = state.players[state.turn]
+    if (received_request := state.transaction_sync(GetUserInput([SetColor]))) is None: return
+    state.color = received_request.color
 
     # move on to the next player
     state.go_next_player()

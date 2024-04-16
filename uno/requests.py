@@ -9,7 +9,7 @@ from typing import Collection
 class Request:
   pass
 
-############################ Requests from Controller to State ############################
+############################ Requests to State ############################
 
 # TODO: maybe split this up as to not classify all the time
 class PlayCard(Request):
@@ -20,7 +20,6 @@ class DealtCard(Request):
   def __init__(self, card, player):
     self.card = card
     self.player = player
-
 
 class SkipTurn(Request):
   pass
@@ -34,12 +33,18 @@ class Bluff(Request):
     self.is_bluff = is_bluff
 
 class CallUNO(Request):
-  pass
+  # the card that they played UNO with
+  def __init__(self, card):
+    self.card = card
 
 class UNOFail(Request):
   pass
 
-############################ Requests from State to Controller ############################
+class CorrectedState(Request):
+  def __init__(self, corrected_state) -> None:
+    self.corrected_state = corrected_state
+
+############################ Requests to Controller ############################
 
 class GoNextPlayer(Request):
   def __init__(self, dir: int) -> None:
@@ -53,7 +58,7 @@ class GetUserInput(Request):
   def __init__(self, request_types: Collection[type[Request]]) -> None:
     self.request_types = request_types
 
-############################ Requests from State to Displayer ############################
+############################ Requests to Displayer ############################
 
 class CurrentState(Request):
   def __init__(self, state) -> None:
@@ -64,7 +69,3 @@ class CurrentState(Request):
 
 class Reset(Request):
   pass # TODO: add more info
-
-class CorrectedState(Request):
-  def __init__(self, corrected_state) -> None:
-    self.corrected_state = corrected_state

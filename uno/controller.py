@@ -410,6 +410,10 @@ class TerminalController(Controller):
       return SkipTurn()
     elif cmd == 'color':
       return SetColor(color_from_string(rest[0]))
+    elif cmd == 'call_bluff':
+      return Bluff(True)
+    elif cmd == 'no_bluff':
+      return Bluff(False)
 
   def _input_listener(self):
     while True:
@@ -429,10 +433,11 @@ class TerminalController(Controller):
           # fix this to first construct the types 
           if type(request) in allowed_input_types:
             self._input_queue.put(request)
-            print('valid request')
+            # print('valid request')
             break
           else:
-            print('invalid input!')
+            # print('invalid input!')
+            pass
         
         time.sleep(TerminalController.POLL_RATE)
 
