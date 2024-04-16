@@ -13,8 +13,9 @@ class Request:
 
 # TODO: maybe split this up as to not classify all the time
 class PlayCard(Request):
-  def __init__(self, card):
+  def __init__(self, card, for_drawn_card: bool = False):
     self.card = card
+    self.for_drawn_card = for_drawn_card
 
 class DealtCard(Request):
   def __init__(self, card, player):
@@ -22,7 +23,8 @@ class DealtCard(Request):
     self.player = player
 
 class SkipTurn(Request):
-  pass
+  def __init__(self, for_drawn_card: bool = False):
+    self.for_drawn_card = for_drawn_card
 
 class SetColor(Request):
   def __init__(self, color) -> None:
@@ -34,11 +36,13 @@ class Bluff(Request):
 
 class CallUNO(Request):
   # the card that they played UNO with
-  def __init__(self, card):
+  def __init__(self, card, for_drawn_card: bool = False):
     self.card = card
+    self.for_drawn_card = for_drawn_card
 
 class UNOFail(Request):
   pass
+
 
 class CorrectedState(Request):
   def __init__(self, corrected_state) -> None:
@@ -55,8 +59,9 @@ class DealCard(Request):
     self.player = player
 
 class GetUserInput(Request):
-  def __init__(self, request_types: Collection[type[Request]]) -> None:
+  def __init__(self, request_types: Collection[type[Request]], for_drawn_card: bool = False) -> None:
     self.request_types = request_types
+    self.for_drawn_card = for_drawn_card
 
 ############################ Requests to Displayer ############################
 

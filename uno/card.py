@@ -117,7 +117,6 @@ class PlusTwo(Card):
     if (received_request := state.transaction_sync(DealCard(curr_player))) is None: return
     curr_player.receive_card(received_request.card)
 
-
     # go to the next player
     state.go_next_player()
 

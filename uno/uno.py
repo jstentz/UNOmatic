@@ -45,12 +45,11 @@ class UNO:
     self.turn: int = 0 # stores the index of the current player's turn
     self.dir: int = +1 # stores which direction the game is moving in 
 
-    # stores who is punishable
+    # stores who is punishable for not calling
     self.is_uno_punishable: Optional[int] = None
 
     # generate players with empty hands
     self.players: Collection[Player] = [Player([], pos) for pos in range(self.num_players)]
-
 
     self._sequence_thread = Thread(target=self.run_init_phase, daemon=True)
 
@@ -67,10 +66,18 @@ class UNO:
       elif type(request) in [CurrentState, CorrectedState]:
         # TODO: handle these requests
         pass
+      elif type(request) in [PlayCard, CallUNO, SkipTurn] and request.for_drawn_card:
+        # just forward along to skip turn handler if we're drawing a card
+        if request.for_drawn_card:
+          self._internal_queue.put(request)
+          continue
+
       elif type(request) in [PlayCard, CallUNO]:
-        # make sure there isn't another card being played (there shouldn't be lil bro)
+        if type(request) is CallUNO:
+          self.is_uno_punishable = None
+
         # reap the thread 
-        self._sequence_thread.join() 
+        if self._sequence_thread: self._sequence_thread.join() 
         
         card = request.card
         # check to see if we can play this card
@@ -83,6 +90,7 @@ class UNO:
 
         # pop this card off the players hand
         curr_player.hand.remove(card)
+        curr_player._sort_hand()
 
         self._sequence_thread = Thread(target=card.play_card, args=(self,), daemon=True)
 
@@ -91,7 +99,13 @@ class UNO:
 
       elif type(request) is SkipTurn:
         # TODO: spawn thread to handle this transaction
-        pass
+        if self._sequence_thread: self._sequence_thread.join() 
+
+        self._sequence_thread = Thread(target=self.run_skip_turn, daemon=True)
+
+        # handle the sequence of actions caused skipping
+        self._sequence_thread.start()
+      
       else:
         # forward along to card handler
         self._internal_queue.put(request)
@@ -117,7 +131,45 @@ class UNO:
     
     received_request.card.play_card(self)
 
+  # handles the full sequence of a player asking to draw a card 
+  def run_skip_turn(self):
+    # deal card to the player
+    curr_player: Player = self.players[self.turn]
+    if (received_request := self.transaction_sync(DealCard(curr_player))) is None: return
 
+    received_card = received_request.card
+    print(f'Received card: {received_card}')
+
+    if received_card.is_playable(self.discard_pile.peek(), self.color):
+      # ask them if they want to play the card
+      # TODO: handle UNO here?
+
+      request_list = [PlayCard, SkipTurn]
+
+      if len(curr_player.hand) == 1:
+        request_list.append(CallUNO)
+
+      while True:
+        if (received_request := self.transaction_sync(GetUserInput(request_list, for_drawn_card=True))) is None: return
+        if type(received_request) is SkipTurn:
+          # add the card to their hand 
+          curr_player.receive_card(received_card)
+          curr_player._sort_hand()
+          self.go_next_player()
+          break
+        elif received_request.card == received_card:
+          # play the card
+          received_card.play_card(self)
+          break
+        # TODO: signal something to controller
+        print('Trying to play non-drawn card')
+      
+    else:
+      curr_player.receive_card(received_request.card)
+      curr_player._sort_hand()
+      self.go_next_player()
+
+  # performs a synchronous transaction 
   def transaction_sync(self, request: Request) -> Optional[Request]:
     # send out the request
     self._output_queue.put(request)
@@ -128,24 +180,23 @@ class UNO:
   
   def go_next_player(self, is_turn_end: bool = True) -> None:
     self._output_queue.put(GoNextPlayer(self.dir))
-    prev_turn = self.turn
     self.turn = (self.turn + self.dir) % self.num_players
 
     # debugging: print out the state
+    # TODO: remove when displayer implemented
     if is_turn_end:
       print(self)
-
 
     # check to see what we should listen for 
     if is_turn_end:
       curr_player = self.players[self.turn]
-      prev_player = self.players[prev_turn]
-
       request_list = [PlayCard, SkipTurn]
       
+      if self.is_uno_punishable is not None:
+        request_list.append(UNOFail)
+      
       if len(curr_player.hand) == 2:
-        # self.is_uno_punishable = 
-        # TODO: fix using this flag
+        self.is_uno_punishable = self.turn
         request_list.append(CallUNO)
 
       self._output_queue.put(GetUserInput(request_list))

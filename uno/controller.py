@@ -418,7 +418,9 @@ class TerminalController(Controller):
   def _input_listener(self):
     while True:
       # wait on some queue to tell you what you should listen for (blocking)
-      allowed_input_types = self._listener_queue.get().request_types
+      request = self._listener_queue.get()
+      allowed_input_types = request.request_types
+      for_drawn_card = request.for_drawn_card
 
       # clear the buffer 
       while TerminalController.is_input_available():
@@ -429,6 +431,10 @@ class TerminalController(Controller):
         if TerminalController.is_input_available():
           cmd = input()
           request = TerminalController.cmd_to_request(cmd)
+
+          # pass along info for CallUNO and PlayCard
+          if type(request) in [PlayCard, CallUNO, SkipTurn]:
+            request.for_drawn_card = for_drawn_card
           
           # fix this to first construct the types 
           if type(request) in allowed_input_types:
