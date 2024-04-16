@@ -71,9 +71,19 @@ class UNO:
         # make sure there isn't another card being played (there shouldn't be lil bro)
         # reap the thread 
         self._sequence_thread.join() 
-        print('here')
         
         card = request.card
+        # check to see if we can play this card
+        curr_player: Player = self.players[self.turn]
+        if card not in curr_player.get_playable_cards(self.discard_pile.peek(), self.color):
+          # TODO: send something to controller / displayer
+          print('Unplayable card')
+          self._output_queue.put(GetUserInput([PlayCard, SkipTurn]))
+          continue
+
+        # pop this card off the players hand
+        curr_player.hand.remove(card)
+
         self._sequence_thread = Thread(target=card.play_card, args=(self,), daemon=True)
 
         # handle the sequence of actions caused by this card
@@ -105,13 +115,9 @@ class UNO:
       if type(received_request.card) not in [Wild, PlusFour]:
         break
     
-    print(received_request.card)
     received_request.card.play_card(self)
 
 
-    
-  
-  
   def transaction_sync(self, request: Request) -> Optional[Request]:
     # send out the request
     self._output_queue.put(request)
@@ -159,7 +165,7 @@ class UNO:
     pass
 
   def __repr__(self) -> str:
-    res = f'Top card: {self.discard_pile.peek()}, Color: {self.color}\n'
+    res = f'Top card: {self.discard_pile.peek()}, Color: {self.color.name if self.color is not None else "None"}\n'
 
     curr_player = self.players[self.turn]
     res += str(curr_player)
