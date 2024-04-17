@@ -331,9 +331,7 @@ from uno.displayer import TkDisplayer
 
 from classification.forward import init_model, get_card
 from uno.utils import card_from_classification
-from uno.requests import Request
-from uno.requests import PlayCard, DealtCard, SkipTurn, SetColor, Bluff, CallUNO, UNOFail
-from uno.requests import GoNextPlayer, DealCard, GetUserInput
+from uno.requests import *
 from uno.utils import card_from_string, color_from_string
 
 from typing import Collection
@@ -351,8 +349,9 @@ class Controller:
     self._main_loop_thread = Thread(target=self._main_loop, daemon=True)
     self._input_listener_thread = Thread(target=self._input_listener, daemon=True)
 
-    self.draw_pile: Deck = Deck(Deck.TOTAL_CARDS)
-    # self._reset()
+  def start(self):
+    self._main_loop_thread.start()
+    self._input_listener_thread.start()
 
   # resets the controller's state, this could happen 
   def reset(self):
@@ -360,18 +359,17 @@ class Controller:
     while not self._input_queue.empty():
       self._input_queue.get()
 
-    if not self._main_loop_thread.is_alive():
-      self._main_loop_thread.start()
-
-    if not self._input_listener_thread.is_alive():
-      self._input_listener_thread.start()
+    # tell the listener thread to reset
+    self._listener_queue.put(Reset())
     
   def _main_loop(self):
     while True:
       # blocks until there is some request to handle (either something from the manager or a button press)
       request = self._input_queue.get()
 
-      if type(request) is GetUserInput:
+      if type(request) is ControllerReset:
+        self._output_queue.put(Reset())
+      elif type(request) is GetUserInput:
         self._listener_queue.put(request)
       elif type(request) in Controller.OutgoingRequests:
         self._output_queue.put(request)
@@ -419,49 +417,99 @@ class TerminalController(Controller):
       return CallUNO(card)
     elif cmd == 'uno_fail':
       return UNOFail()
-
+    elif cmd == 'reset':
+      return ControllerReset()
+    
   def _input_listener(self):
+    allowed_input_types = [ControllerReset]
+    for_drawn_card = False
+    # poll forever
     while True:
-      # wait on some queue to tell you what you should listen for (blocking)
-      request = self._listener_queue.get()
-      allowed_input_types = request.request_types
-      for_drawn_card = request.for_drawn_card
+      if not self._listener_queue.empty():
+        # clear input buffer
+        while TerminalController.is_input_available():
+          input()
 
-      # print(f'Listening for: {[allowed_type.__name__ for allowed_type in allowed_input_types]}')
-
-      # clear the buffer 
-      while TerminalController.is_input_available():
-        input()
+        request = self._listener_queue.get()
+        if type(request) is Reset:
+          allowed_input_types = [ControllerReset]
+          for_drawn_card = False
+          continue
+        else:
+          allowed_input_types += request.request_types
+          for_drawn_card = request.for_drawn_card
       
-      # this get's non-blocking info
-      while True:
-        if TerminalController.is_input_available():
-          cmd = input()
-          request = TerminalController.cmd_to_request(cmd)
+      if TerminalController.is_input_available():
+        cmd = input()
+        request = TerminalController.cmd_to_request(cmd)
 
-          # pass along info for CallUNO and PlayCard
-          if type(request) in [PlayCard, CallUNO, SkipTurn]:
-            request.for_drawn_card = for_drawn_card
-          
-          # fix this to first construct the types 
-          if type(request) in allowed_input_types:
-            self._input_queue.put(request)
-            # print('valid request')
-            break
-          else:
-            # print('invalid input!')
-            pass
+        # pass along info for CallUNO and PlayCard
+        if type(request) in [PlayCard, CallUNO, SkipTurn]:
+          request.for_drawn_card = for_drawn_card
         
-        time.sleep(TerminalController.POLL_RATE)
+        # fix this to first construct the types 
+        if type(request) in allowed_input_types:
+          self._input_queue.put(request)
+          allowed_input_types = [ControllerReset]
+          for_drawn_card = False
+      
+      time.sleep(TerminalController.POLL_RATE)
 
-        if not self._stop_queue.empty(): 
-          self._stop_queue.get_nowait()
-          break
+        
+
+  # def _input_listener(self):
+  #   while True:
+  #     # wait on some queue to tell you what you should listen for (blocking)
+  #     request = self._listener_queue.get()
+  #     self.is_listening = True
+
+  #     print(f'controller listener queue received: {request}')
+  #     if type(request) is GetUserInput:
+  #       print(request.request_types, request.for_drawn_card)
+
+  #     allowed_input_types = request.request_types + [ControllerReset]
+  #     for_drawn_card = request.for_drawn_card
+
+  #     # print(f'Listening for: {[allowed_type.__name__ for allowed_type in allowed_input_types]}')
+
+  #     # clear the buffer 
+  #     while TerminalController.is_input_available():
+  #       input()
+      
+  #     while True:
+  #       if TerminalController.is_input_available():
+  #         cmd = input()
+  #         request = TerminalController.cmd_to_request(cmd)
+
+  #         # pass along info for CallUNO and PlayCard
+  #         if type(request) in [PlayCard, CallUNO, SkipTurn]:
+  #           request.for_drawn_card = for_drawn_card
+          
+  #         # fix this to first construct the types 
+  #         if type(request) in allowed_input_types:
+  #           self._input_queue.put(request)
+  #           # print('valid request')
+  #           break
+  #         else:
+  #           # print('invalid input!')
+  #           pass
+        
+  #       time.sleep(TerminalController.POLL_RATE)
+
+  #       if not self._stop_queue.empty(): 
+  #         self._stop_queue.get_nowait()
+  #         break
 
   def _handle_action(self, request: Request) -> None:
     if type(request) is DealCard:
       dealt_card = self.draw_pile.pop()
       self._output_queue.put(DealtCard(dealt_card, request.player))
+
+  def reset(self):
+    self.draw_pile: Deck = Deck(Deck.TOTAL_CARDS)
+    super().reset()
+
+
 
 
 

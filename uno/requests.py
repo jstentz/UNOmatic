@@ -73,4 +73,14 @@ class CurrentState(Request):
 ############################ Common Requests ############################
 
 class Reset(Request):
-  pass # TODO: add more info
+  def __init__(self, num_players: int = 4, hand_size: int = 7) -> None:
+    self.num_players = num_players
+    self.hand_size = hand_size
+
+
+############################ Internal Controller Requests ############################
+
+class ControllerReset(Request):
+  pass
+
+# TODO: add an internal displayer reset 

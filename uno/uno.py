@@ -34,12 +34,16 @@ class UNO:
     
   def reset(self, request: Reset):
     # check to see if there is a lingering card player thread
-    if self._sequence_thread is not None and self._sequence_thread.is_alive():
+    if self._sequence_thread is not None:
       self._internal_queue.put(request)
       self._sequence_thread.join()
 
-    self.hand_size: int = 3
-    self.num_players: int = 4
+    # clear the input queue
+    while not self._internal_queue.empty():
+      self._internal_queue.get()
+
+    self.hand_size: int = request.hand_size
+    self.num_players: int = request.num_players
     self.discard_pile: Deck = Deck(0)
     self.color: Optional[Color] = None # this is extra info for when the top card is wild or plus4
     self.turn: int = 0 # stores the index of the current player's turn
@@ -58,15 +62,12 @@ class UNO:
 
     # handle the sequence of actions to init the game
     self._sequence_thread.start()
-    
 
   def _main_loop(self):
     while True:
       request = self._input_queue.get()
 
-      if type(request) is Reset:
-        self.reset(request)
-      elif type(request) in [CurrentState, CorrectedState]:
+      if type(request) in [CurrentState, CorrectedState]:
         # TODO: handle these requests
         pass
       elif type(request) in [PlayCard, CallUNO, SkipTurn] and request.for_drawn_card:
