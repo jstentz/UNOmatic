@@ -344,7 +344,7 @@ class Controller:
   def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request]): 
     self._input_queue = input_queue # requests coming in from the manager or internally
     self._output_queue = output_queue # requests going out to the manager 
-    self._listener_queue: Queue[GetUserInput] = Queue()
+    self._listener_queue: Queue[Request] = Queue()
     self._stop_queue: Queue[bool] = Queue()
     self._main_loop_thread = Thread(target=self._main_loop, daemon=True)
     self._input_listener_thread = Thread(target=self._input_listener, daemon=True)
