@@ -211,7 +211,6 @@
 #     self.cam_top.start(show_preview=False)
 
 #   def keypad_init(self) -> None:
-#     # TODO: figure out keypad pin specifics
 #     chip = gpiod.Chip('gpiochip4')
 #     self.row_lines = []
 #     for (consumer, pin) in HWController.row_pins:
@@ -308,7 +307,7 @@
 from __future__ import annotations
 
 import os
-from threading import Thread
+from threading import Thread, Lock
 import time
 import numpy as np
 
@@ -508,6 +507,170 @@ class TerminalController(Controller):
   def reset(self):
     self.draw_pile: Deck = Deck(Deck.TOTAL_CARDS)
     super().reset()
+  
+class HardwareController(Controller):
+  POLL_RATE = 0.01
+
+  row_pins = [
+  ("r1", 6),
+  ("r2", 21),
+  ("r3", 20),
+  ("r4", 19)]
+
+  col_pins = [
+  ("c1", 13),
+  ("c2", 5),
+  ("c3", 26)]
+
+
+  key_map: list[list[Optional[type[Request]]]] = [[PlayCard, CallUNO, SetColor],
+                                        [SkipTurn, UNOFail, SetColor],
+                                        [None, Bluff, SetColor],
+                                        [ControllerReset, Bluff, SetColor]]
+  bluff_map: dict[int, bool] = {2: True, 3: False}
+  color_map: list[Color] = [Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW]
+
+  def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request]):
+    super().__init__(input_queue, output_queue)
+    self.ser_init()
+    self.cam_init()
+    self.keypad_init()
+    self.model_init()
+
+  def lock_init(self):
+    self.keypad_lock = Lock()
+
+  def ser_init(self) -> None:
+    self.ser = serial.Serial("/dev/ttyACM0", 9600, timeout=30)
+    time.sleep(2)
+
+
+  def cam_init(self) -> None:
+    self.cam_bot = Picamera2(0)
+    self.cam_config = self.cam_bot.create_still_configuration({"size": (360, 360)})
+    self.cam_bot.configure(self.cam_config)
+    self.cam_top = Picamera2(1)
+    self.cam_top.configure(self.cam_config)
+    self.cam_bot.start(show_preview=False)
+    self.cam_top.start(show_preview=False)
+
+  def keypad_init(self) -> None:
+    chip = gpiod.Chip('gpiochip4')
+    self.row_lines = []
+    for (consumer, pin) in HardwareController.row_pins:
+        self.row_lines.append(chip.get_line(pin))
+        self.row_lines[-1].request(consumer = consumer, type=gpiod.LINE_REQ_DIR_IN, flags=gpiod.LINE_REQ_FLAG_BIAS_PULL_DOWN)
+    self.col_lines = []
+    for (consumer, pin) in HardwareController.col_pins:
+        self.col_lines.append(chip.get_line(pin))
+        self.col_lines[-1].request(consumer = consumer, type=gpiod.LINE_REQ_DIR_OUT)
+        self.col_lines[-1].set_value(0)
+
+  def keypad_read(self) -> Optional[tuple[int, int]]:
+    self.keypad_lock.acquire()
+    for (i, col) in enumerate(self.col_lines):
+      col.set_value(1)
+      for (j, row) in enumerate(self.row_lines):
+        if row.get_value() == 1:
+          col.set_value(0)
+          self.keypad_lock.release()
+          return (j, i)
+      col.set_value(0)
+    self.keypad_lock.release()
+    return None
+
+  def model_init(self) -> None:
+    file_dir = os.path.split(__file__)[0]
+    model_dir = os.path.join(file_dir,'../classification/models')
+    self.model_top = init_model(os.path.join(model_dir, 'model_top_pretrain.pth'), True)
+    self.model_bot = init_model(os.path.join(model_dir, 'model_bot_pretrain.pth'), True)
+    self.model_color = init_model(os.path.join(model_dir, 'model_color_pretrain.pth'), True)
+    
+  def _input_listener(self):
+    allowed_input_types = [ControllerReset]
+    for_drawn_card = False
+    # poll forever
+    while True:
+      if not self._listener_queue.empty():
+
+        request = self._listener_queue.get()
+        if type(request) is Reset:
+          allowed_input_types = [ControllerReset]
+          for_drawn_card = False
+          continue
+        else:
+          allowed_input_types += request.request_types
+          for_drawn_card = request.for_drawn_card
+      
+      if (button_press := self.keypad_read()) is not None:
+        request_type = self.key_map[button_press[0]][button_press[1]]
+        if request_type is None:
+          continue
+
+        if request_type in [PlayCard, CallUNO]:
+          image = self.cam_top.capture_array().astype(np.float32) / 255
+          card = card_from_classification(*get_card(self.model_top, self.model_color, image, True))
+          request = request_type(card)
+        elif request_type == SetColor:
+          color = self.color_map[button_press[0]]
+          request = request_type(color)
+        elif request_type == Bluff:
+          is_bluff = self.bluff_map[button_press[0]]
+          request = request_type(is_bluff)
+        else:
+          request = request_type()
+
+        # pass along info for CallUNO and PlayCard
+        if request_type in [PlayCard, CallUNO, SkipTurn]:
+          request.for_drawn_card = for_drawn_card
+        
+        # fix this to first construct the types 
+        if type(request) in allowed_input_types:
+          self._input_queue.put(request)
+          allowed_input_types = [ControllerReset]
+          for_drawn_card = False
+      
+      time.sleep(HardwareController.POLL_RATE)
+
+  def _handle_action(self, request: Request) -> None:
+    if type(request) is GoNextPlayer:
+      self.ser.write(f'r(dir)\n'.encode("ascii"))
+      _ = self.ser.readline().decode("ascii").strip()
+    elif type(request) is DealCard:
+      image = self.cam_bot.capture_array().astype(np.float32) / 255
+
+      self.ser.write("d\n".encode("ascii"))
+      labels = get_card(self.model_bot, self.model_color, image, False)
+      if self.ser.readline().decode("ascii").strip() == "t":
+        card = card_from_classification(*labels)
+        self._output_queue.put(DealtCard(card, request.player))
+
+      for _ in range(2):
+        self.ser.write("u\n".encode("ascii"))
+        _ = self.ser.readline().decode("ascii").strip()
+        self.ser.write("u\n".encode("ascii"))
+        _ = self.ser.readline().decode("ascii").strip()
+        self.ser.write("d\n".encode("ascii"))
+        if self.ser.readline().decode("ascii").strip() == "t":
+          card = card_from_classification(*labels)
+          self._output_queue.put(DealtCard(card, request.player))
+        self.ser.write("u\n".encode("ascii"))
+        _ = self.ser.readline().decode("ascii").strip()     
+
+      while True:
+        button_press = self.keypad_read()
+        if button_press is None:
+          continue
+        if self.key_map[button_press[0]][button_press[1]] is None:
+          break
+
+      card = card_from_classification(*labels)
+      self._output_queue.put(DealtCard(card, request.player))
+
+
+  def reset(self):
+    super().reset()
+  
 
 
 
