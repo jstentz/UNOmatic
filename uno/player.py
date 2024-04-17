@@ -1,10 +1,14 @@
 # enables lazy type annotation resolving
 from __future__ import annotations
 
-
 from typing import Collection, Optional
 
 from uno.card import Color, Card
+
+# only import what we need if we are doing type checking
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  from uno.uno import UNO
 
 
 class Player:
@@ -18,11 +22,13 @@ class Player:
     # sort the hand
     self._sort_hand()
 
-  def receive_card(self, card : Card) -> None:
+  def receive_card(self, card : Card, state: UNO) -> None:
     self.hand.append(card)
 
     # keep hand sorted
     self._sort_hand()
+
+    state._send_update_to_displayer()
 
   def can_play(self, top_card: Card, deck_color: Color) -> bool:
     return self.get_playable_cards(top_card, deck_color) == []
@@ -30,10 +36,12 @@ class Player:
   def get_playable_cards(self, top_card: Card, deck_color: Color):
     return list(filter(lambda c: c.is_playable(top_card, deck_color), self.hand))
 
-  def remove_card(self, card: Card) -> None:
+  def remove_card(self, card: Card, state: UNO) -> None:
     self.hand.remove(card)
 
     self._sort_hand()
+
+    state._send_update_to_displayer()
 
   
   def _sort_hand(self) -> None:

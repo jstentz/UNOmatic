@@ -18,6 +18,20 @@ from uno.card import Card, Wild, PlusFour
 from uno.player import Player
 from uno.requests import *
 
+import copy
+
+# constructs a display state by copying an uno state
+class DisplayUNOState:
+  def __init__(self, state: UNO):
+    self.hand_size: int = state.hand_size
+    self.num_players: int = state.num_players
+    self.discard_pile = copy.deepcopy(state.discard_pile)
+    self.color: Optional[Color] = copy.deepcopy(state.color)
+    self.turn: int = state.turn
+    self.dir: int = state.dir 
+    self.players: Collection[Player] = copy.deepcopy(state.players)
+
+
 class UNO:
 
   def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request]):
@@ -88,13 +102,12 @@ class UNO:
         # check to see if we can play this card
         curr_player: Player = self.players[self.turn]
         if card not in curr_player.get_playable_cards(self.discard_pile.peek(), self.color):
-          # TODO: send something to controller / displayer
           print('Unplayable card')
           self._output_queue.put(GetUserInput([PlayCard, SkipTurn]))
           continue
 
         # pop this card off the players hand
-        curr_player.remove_card(card)
+        curr_player.remove_card(card, self)
 
 
         self._sequence_thread = Thread(target=card.play_card, args=(self,), daemon=True)
@@ -135,7 +148,7 @@ class UNO:
       # deal all the cards to this player
       for _ in range(self.hand_size):
         if (received_request := self.transaction_sync(DealCard(curr_player))) is None: return
-        curr_player.receive_card(received_request.card)
+        curr_player.receive_card(received_request.card, self)
         
       self.go_next_player(is_turn_end=False)
 
@@ -158,6 +171,9 @@ class UNO:
     # for displaying later, mark received card
     curr_player.drawn_card = received_card
 
+    # TODO: update the displayer here
+    self._send_update_to_displayer()
+
     if received_card.is_playable(self.discard_pile.peek(), self.color):
       # ask them if they want to play the card
       # TODO: handle UNO here?
@@ -171,7 +187,7 @@ class UNO:
         if (received_request := self.transaction_sync(GetUserInput(request_list, for_drawn_card=True))) is None: return
         if type(received_request) is SkipTurn:
           # add the card to their hand 
-          curr_player.receive_card(received_card)
+          curr_player.receive_card(received_card, self)
           self.call_uno_player = None
           # reset this to be None
           curr_player.drawn_card = None
@@ -184,11 +200,10 @@ class UNO:
           # play the card
           received_card.play_card(self)
           break
-        # TODO: signal something to controller
         print('Trying to play non-drawn card')
       
     else:
-      curr_player.receive_card(received_request.card)
+      curr_player.receive_card(received_request.card, self)
       # reset this to be None
       curr_player.drawn_card = None
       self.go_next_player()
@@ -210,7 +225,7 @@ class UNO:
     curr_player: Player = self.players[self.turn]
     for _ in range(4):
       if (received_request := self.transaction_sync(DealCard(curr_player))) is None: return
-      curr_player.receive_card(received_request.card)
+      curr_player.receive_card(received_request.card, self)
     
     for _ in range(count):
       self.go_next_player(is_turn_end=False)
@@ -252,13 +267,16 @@ class UNO:
 
       self._output_queue.put(GetUserInput(request_list))
 
-      # DEBUGGING
-      # TODO: REMOVE
-      self._output_queue.put(CurrentState(self))
+      # update the displayer
+      self._send_update_to_displayer()
 
   def go_prev_player(self) -> None:
     self._output_queue.put(GoNextPlayer(-self.dir))
     self.turn = (self.turn - self.dir) % self.num_players
+
+
+  def _send_update_to_displayer(self) -> None:
+    self._output_queue.put(CurrentState(DisplayUNOState(self)))
 
   def reverse(self) -> None:
     self.dir = -self.dir

@@ -11,6 +11,7 @@ from PIL import Image, ImageTk
 import os
 from threading import Thread
 from queue import Queue
+import copy
 
 
 from uno.card import Card, Wild, PlusFour
@@ -21,7 +22,9 @@ from uno.requests import *
 # only import what we need if we are doing type checking
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from uno.uno import UNO
+  from uno.uno import DisplayUNOState
+
+
 
 class Displayer:
   def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request]):
@@ -51,7 +54,7 @@ class Displayer:
         print('Unknown request sent to Displayer')
 
   # display the game state in a non-blocking way
-  def display_state(self, state: UNO) -> None:
+  def display_state(self, state: DisplayUNOState) -> None:
     pass
 
   # TODO: need some function that listens for state corrections and forwards them to the manager
@@ -69,7 +72,7 @@ class TerminalDisplayer(Displayer):
     pass
 
   # show what the game state looks like
-  def display_state(self, state: UNO) -> None:
+  def display_state(self, state: DisplayUNOState) -> None:
     top_card = state.discard_pile.peek()
     color = state.color
 
@@ -90,6 +93,7 @@ class TerminalDisplayer(Displayer):
       else:  
         print('    ', end='')
         print(player.hand)
+    print()
   
   # def signal_invalid_state(self, state: UNO) -> None:
   #   print('The board has entered an invalid state. Exiting...')
@@ -125,7 +129,7 @@ class TkDisplayer(Displayer):
   def _draw_card(self, card: Card, sx: int, sy: int):
     self.canvas.create_image(sx, sy, anchor=tk.NW, image=self.images[card.image_name])
 
-  def display_state(self, state: UNO) -> None:
+  def display_state(self, state: DisplayUNOState) -> None:
     self.canvas.delete(tk.ALL)
     # curr_player: Player = state.players[state.turn]
     
@@ -156,7 +160,7 @@ class TkDisplayer(Displayer):
       self.canvas.create_text(self.width / 2, 1/12 * self.height - 30, text='Top Card', font=('Purisa Bold', 20), fill=state.color.name)
     self.window.update_idletasks()
     
-  def signal_invalid_state(self, state: UNO) -> None:
+  def signal_invalid_state(self, state: DisplayUNOState) -> None:
     print('The board has entered an invalid state. Exiting...')
     exit(1)
 

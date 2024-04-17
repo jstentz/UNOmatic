@@ -104,6 +104,7 @@ class PlusTwo(Card):
     # place the card on the discard pile
     state.discard_pile.push(self)
 
+
     # update the color of the deck
     state.color = self.color
 
@@ -113,9 +114,9 @@ class PlusTwo(Card):
     # deal two cards to the player
     curr_player: Player = state.players[state.turn]
     if (received_request := state.transaction_sync(DealCard(curr_player))) is None: return
-    curr_player.receive_card(received_request.card)
+    curr_player.receive_card(received_request.card, state)
     if (received_request := state.transaction_sync(DealCard(curr_player))) is None: return
-    curr_player.receive_card(received_request.card)
+    curr_player.receive_card(received_request.card, state)
 
     # go to the next player
     state.go_next_player()
@@ -130,6 +131,7 @@ class Skip(Card):
   def play_card(self, state: UNO) -> None:
     # place the card on the discard pile
     state.discard_pile.push(self)
+
 
     # update the color of the deck
     state.color = self.color
@@ -148,6 +150,7 @@ class Reverse(Card):
   def play_card(self, state: UNO) -> None:
     # place the card on the discard pile
     state.discard_pile.push(self)
+
 
     # update the color of the deck
     state.color = self.color
@@ -176,9 +179,13 @@ class PlusFour(Card):
     # place the card on the discard pile
     state.discard_pile.push(self)
 
+    state._send_update_to_displayer()
+
     # ask the user for a color
     if (received_request := state.transaction_sync(GetUserInput([SetColor]))) is None: return
     state.color = received_request.color
+
+    state._send_update_to_displayer()
     
 
     # go the next player
@@ -201,7 +208,7 @@ class PlusFour(Card):
       for _ in range(4):
         curr_player = state.players[state.turn]
         if (received_request := state.transaction_sync(DealCard(curr_player))) is None: return
-        curr_player.receive_card(received_request.card)
+        curr_player.receive_card(received_request.card, state)
 
       # progress to the next player
       state.go_next_player()
@@ -213,7 +220,7 @@ class PlusFour(Card):
       for _ in range(6):
         curr_player = state.players[state.turn]
         if (received_request := state.transaction_sync(DealCard(curr_player))) is None: return
-        curr_player.receive_card(received_request.card)
+        curr_player.receive_card(received_request.card, state)
 
       state.go_next_player()
 
@@ -223,7 +230,7 @@ class PlusFour(Card):
       for _ in range(4):
         curr_player = state.players[state.turn]
         if (received_request := state.transaction_sync(DealCard(curr_player))) is None: return
-        curr_player.receive_card(received_request.card)
+        curr_player.receive_card(received_request.card, state)
 
       state.go_next_player()
 
@@ -239,10 +246,14 @@ class Wild(Card):
     # place the card on the discard pile
     state.discard_pile.push(self)
 
+    state._send_update_to_displayer()
+
     # ask the user for a color
     # curr_player = state.players[state.turn]
     if (received_request := state.transaction_sync(GetUserInput([SetColor]))) is None: return
     state.color = received_request.color
+
+    state._send_update_to_displayer()
 
     # move on to the next player
     state.go_next_player()
