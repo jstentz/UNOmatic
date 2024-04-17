@@ -24,23 +24,38 @@ class PlayCard(Request):
   def __init__(self, card: Card, for_drawn_card: bool = False):
     self.card = card
     self.for_drawn_card = for_drawn_card
+  
+  def __repr__(self) -> str:
+    return f'PlayCard[card={self.card}{"" if not self.for_drawn_card else f", for_drawn_card=True"}]'
 
 class DealtCard(Request):
-  def __init__(self, card: Card, player):
+  def __init__(self, card: Card, player: Player):
     self.card = card
     self.player = player
+
+  def __repr__(self) -> str:
+    return f'DealtCard[card={self.card}, player={self.player.name}]' if self.player is not None else f'DealtCard[card={self.card}, player=TOP_CARD]'
 
 class SkipTurn(Request):
   def __init__(self, for_drawn_card: bool = False):
     self.for_drawn_card = for_drawn_card
 
+  def __repr__(self) -> str:
+    return f'SkipTurn{"" if not self.for_drawn_card else "[for_drawn_card=True]"}'
+
 class SetColor(Request):
   def __init__(self, color: Color) -> None:
     self.color = color
+  
+  def __repr__(self) -> str:
+    return f'SetColor[color={self.color.name}]'
 
 class Bluff(Request):
   def __init__(self, is_bluff: bool) -> None:
     self.is_bluff = is_bluff
+
+  def __repr__(self) -> str:
+    return f'Bluff[is_bluff={self.is_bluff}]'
 
 class CallUNO(Request):
   # the card that they played UNO with
@@ -48,12 +63,20 @@ class CallUNO(Request):
     self.card = card
     self.for_drawn_card = for_drawn_card
 
+  def __repr__(self) -> str:
+    return f'CallUNO[card={self.card}{"" if not self.for_drawn_card else f", for_drawn_card=True"}]'
+
 class UNOFail(Request):
-  pass
+  def __repr__(self) -> str:
+    return 'UNOFail'
 
 class CorrectedState(Request):
   def __init__(self, corrected_state: DisplayUNOState) -> None:
     self.corrected_state = corrected_state
+
+  def __repr__(self) -> str:
+    # TODO: maybe this should be diff
+    return 'CorrectedState'
 
 ############################ Requests to Controller ############################
 
@@ -61,14 +84,23 @@ class GoNextPlayer(Request):
   def __init__(self, dir: int) -> None:
     self.dir = dir
 
+  def __repr__(self) -> str:
+    return f'GoNextPlayer[dir={self.dir}]'
+
 class DealCard(Request):
   def __init__(self, player: Player) -> None:
     self.player = player
+
+  def __repr__(self) -> str:
+    return f'DealCard[player={self.player.name}]' if self.player is not None else f'DealCard[TOP_CARD]'
 
 class GetUserInput(Request):
   def __init__(self, request_types: Collection[type[Request]], for_drawn_card: bool = False) -> None:
     self.request_types = request_types
     self.for_drawn_card = for_drawn_card
+
+  def __repr__(self) -> str:
+    return f'GetUserInput[request_types={",".join([request_type.__name__ for request_type in self.request_types])}{"" if not self.for_drawn_card else f", for_drawn_card=True"}]'
 
 ############################ Requests to Displayer ############################
 
@@ -76,6 +108,9 @@ class CurrentState(Request):
   def __init__(self, state: DisplayUNOState) -> None:
     self.state = state
 
+  def __repr__(self) -> str:
+    # TODO: add more to this 
+    return 'CurrentState'
 
 ############################ Common Requests ############################
 
@@ -83,6 +118,9 @@ class Reset(Request):
   def __init__(self, num_players: int = 4, hand_size: int = 7) -> None:
     self.num_players = num_players
     self.hand_size = hand_size
+
+  def __repr__(self) -> str:
+    return f'Reset[num_players={self.num_players}, hand_size={self.hand_size}]'
 
 
 ############################ Internal Controller Requests ############################

@@ -26,27 +26,35 @@ class Manager:
   TO_STATE = [PlayCard, DealtCard, SkipTurn, SetColor, Bluff, CallUNO, UNOFail, CorrectedState]
   TO_DISPLAYERS = [CurrentState]
 
-  def __init__(self, controller_type: type[Controller], displayer_types: Collection[type[Displayer]]) -> None:
+  def __init__(self, controller_type: type[Controller], displayer_types: Collection[type[Displayer]], logger: logging.Logger) -> None:
     # make all of the queues for communication
     self.manager_queue = Queue()
     self.controller_queue = Queue()
     self.state_queue = Queue()
     self.displayer_queues = [Queue() for _ in range(len(displayer_types))]
+    self.logger = logger
 
     self.controller = controller_type(self.controller_queue, self.manager_queue)
+    self.logger.info(f'Initialized {controller_type.__name__}')
     self.state = UNO(self.state_queue, self.manager_queue) # TODO: change this
+    self.logger.info(f'Initialized UNO state')
     self.displayers = [displayer_type(displayer_queue, self.manager_queue) for displayer_type, displayer_queue in zip(displayer_types, self.displayer_queues)] # TODO: change this
+    self.logger.info(f'Initialized {", ".join([displayer_type.__name__ for displayer_type in displayer_types])}')
 
 
   def start(self):
     self.controller.start()
+    self.logger.info('Started controller')
     self.state.start()
+    self.logger.info('Started UNO state')
     for displayer in self.displayers:
       displayer.start()
+    self.logger.info('Started displayers')
 
     # main control flow loop
     while True:
       request = self.manager_queue.get()
+      self.logger.info(f'Manager received {request}')
 
       if type(request) is Reset:
 

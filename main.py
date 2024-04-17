@@ -46,22 +46,22 @@ if __name__ == '__main__':
   controller_class = NAME_TO_CONTROLLER[args.controller_name]
   displayer_classes = [NAME_TO_DISPLAYER[displayer_name] for displayer_name in args.displayer_names]
 
-  # # set up logging
-  # logger: logging.Logger = logging.Logger(__file__)
-  # date_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-  # path = os.path.join(os.path.dirname(__file__), f'uno/logs/log_{date_time}.log')
-  # formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+  # set up logging
+  logger: logging.Logger = logging.Logger(__file__)
+  date_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+  path = os.path.join(os.path.dirname(__file__), f'uno/logs/log_{date_time}.log')
+  formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
   
-  # if args.log:
-  #   file_handler = logging.FileHandler(path)
-  #   logger.addHandler(file_handler)
-  #   file_handler.setLevel(logging.DEBUG)
-  #   file_handler.setFormatter(formatter)
-  # else:
-  #   logger.addHandler(logging.NullHandler())
+  if args.log:
+    file_handler = logging.FileHandler(path)
+    logger.addHandler(file_handler)
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
+  else:
+    logger.addHandler(logging.NullHandler())
 
   # create the objects from the classes
-  manager = Manager(controller_class, displayer_classes)
+  manager = Manager(controller_class, displayer_classes, logger)
   manager.start()
 
 '''
