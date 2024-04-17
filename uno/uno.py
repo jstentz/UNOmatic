@@ -274,12 +274,19 @@ class UNO:
     self._output_queue.put(GoNextPlayer(-self.dir))
     self.turn = (self.turn - self.dir) % self.num_players
 
-
   def _send_update_to_displayer(self) -> None:
     self._output_queue.put(CurrentState(DisplayUNOState(self)))
 
   def reverse(self) -> None:
     self.dir = -self.dir
+
+  # compute the score this person would get if they win
+  def get_score(self, player: Player):
+    score = 0
+    for other_player in self.players:
+      if other_player is not player:
+        score += sum(map(Card.get_value, other_player.hand))
+    return score
 
   # def player_has_uno(self) -> bool:
   #   return [player for player in self.players if len(player.hand) == 1] != [ ] 

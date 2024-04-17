@@ -18,6 +18,10 @@ class Player:
     self.drawn_card: Optional[Card] = None
     self.position = position
     self.name = name if name is not None else f'Player {position}'
+    
+    # TODO: need to differentiate between a new round and a new game
+    # that distinction probably doesn't need to touch the controller
+    self.score = 0
 
     # sort the hand
     self._sort_hand()

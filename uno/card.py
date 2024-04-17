@@ -171,6 +171,9 @@ class Reverse(Card):
     state.reverse()
     state.go_next_player()
 
+  def get_value(self):
+    return 20
+
 class PlusFour(Card):
   def __init__(self):
     super().__init__(color=None, number=None)
@@ -246,6 +249,8 @@ class PlusFour(Card):
 
       state.go_next_player()
 
+  def get_value(self):
+    return 50
 
 class Wild(Card):
   def __init__(self):
@@ -269,3 +274,6 @@ class Wild(Card):
 
     # move on to the next player
     state.go_next_player()
+
+  def get_value(self):
+    return 50
