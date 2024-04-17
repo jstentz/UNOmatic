@@ -27,9 +27,12 @@ class Player:
   
   def get_playable_cards(self, top_card: Card, deck_color: Color):
     return list(filter(lambda c: c.is_playable(top_card, deck_color), self.hand))
-  
-  # def get_bluff_answer(self):
-  #   return input('Call bluff (y/n)?') == 'y'
+
+  def remove_card(self, card: Card) -> None:
+    self.hand.remove(card)
+
+    self._sort_hand()
+
   
   def _sort_hand(self) -> None:
     # sort by card color, then card type, then card number

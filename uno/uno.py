@@ -94,8 +94,8 @@ class UNO:
           continue
 
         # pop this card off the players hand
-        curr_player.hand.remove(card)
-        curr_player._sort_hand()
+        curr_player.remove_card(card)
+        
 
         self._sequence_thread = Thread(target=card.play_card, args=(self,), daemon=True)
 
@@ -170,7 +170,6 @@ class UNO:
         if type(received_request) is SkipTurn:
           # add the card to their hand 
           curr_player.receive_card(received_card)
-          curr_player._sort_hand()
           self.call_uno_player = None
           self.go_next_player()
           break
@@ -186,7 +185,6 @@ class UNO:
       
     else:
       curr_player.receive_card(received_request.card)
-      curr_player._sort_hand()
       self.go_next_player()
 
   # punish the player at position pos
@@ -227,15 +225,10 @@ class UNO:
     received_request = self._internal_queue.get()
     return None if type(received_request) is Reset else received_request
 
-  
+
   def go_next_player(self, is_turn_end: bool = True) -> None:
     self._output_queue.put(GoNextPlayer(self.dir))
     self.turn = (self.turn + self.dir) % self.num_players
-
-    # debugging: print out the state
-    # TODO: remove when displayer implemented
-    if is_turn_end:
-      print(self)
 
     # check to see what we should listen for 
     if is_turn_end:
@@ -273,10 +266,3 @@ class UNO:
     curr_player = self.players[self.turn]
     res += str(curr_player)
     return res
-
-'''
-Add a button that means "playing with UNO call"
-
-Add "player_that_can_be_bluffed" to the state (UNO VICTIM)
-
-'''

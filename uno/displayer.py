@@ -13,6 +13,7 @@ import os
 
 from uno.card import Card, Wild, PlusFour
 from uno.player import Player
+from uno.requests import *
 
 
 # only import what we need if we are doing type checking
@@ -74,7 +75,7 @@ class TkDisplayer(Displayer):
     self.margin = 10
     self.canvas = tk.Canvas(self.window, width=self.width, height=self.height)
     self.canvas.pack(fill=tk.BOTH, expand=tk.YES)
-    self.window.update_idletasks()
+    # self.window.update_idletasks()
 
     # fill a list of all card images
     self.images: dict[str, ImageTk.PhotoImage] = {}
@@ -127,4 +128,14 @@ class TkDisplayer(Displayer):
   def signal_invalid_state(self, state: UNO) -> None:
     print('The board has entered an invalid state. Exiting...')
     exit(1)
+
+
+'''
+When to update the displayer (send whole state):
+ * when a player receives a card
+ * when a player plays a card
+ * when the color of the deck changes (player sets the color after + 4)
+ * when the turn changes 
+
+'''
     

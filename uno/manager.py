@@ -55,16 +55,12 @@ class Manager:
           while not queue.empty():
             queue.get()
         
-        # # forward this request to everyone
-        # self.controller_queue.put(request)
-        # self.state_queue.put(request)
-
         self.controller.reset()
         self.state.reset(request)
 
         # TODO: uncomment when displayers set up
-        # for displayer_queue in self.displayer_queues:
-        #   displayer_queue.put(request)
+        # for displayer in self.displayers:
+        #   displayer_queue.reset()
 
       elif type(request) in Manager.TO_CONTROLLER:
         self.controller_queue.put(request)
@@ -72,7 +68,7 @@ class Manager:
         self.state_queue.put(request)
       elif type(request) in Manager.TO_DISPLAYERS:
         for displayer_queue in self.displayer_queues:
-          self.displayer_queue.put(request)
+          displayer_queue.put(request)
       else:
         print('Unknown request in Manager!')
       
