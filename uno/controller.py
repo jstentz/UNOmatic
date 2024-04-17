@@ -152,50 +152,6 @@ class TerminalController(Controller):
       
       time.sleep(TerminalController.POLL_RATE)
 
-        
-
-  # def _input_listener(self):
-  #   while True:
-  #     # wait on some queue to tell you what you should listen for (blocking)
-  #     request = self._listener_queue.get()
-  #     self.is_listening = True
-
-  #     print(f'controller listener queue received: {request}')
-  #     if type(request) is GetUserInput:
-  #       print(request.request_types, request.for_drawn_card)
-
-  #     allowed_input_types = request.request_types + [ControllerReset]
-  #     for_drawn_card = request.for_drawn_card
-
-  #     # print(f'Listening for: {[allowed_type.__name__ for allowed_type in allowed_input_types]}')
-
-  #     # clear the buffer 
-  #     while TerminalController.is_input_available():
-  #       input()
-      
-  #     while True:
-  #       if TerminalController.is_input_available():
-  #         cmd = input()
-  #         request = TerminalController.cmd_to_request(cmd)
-
-  #         # pass along info for CallUNO and PlayCard
-  #         if type(request) in [PlayCard, CallUNO, SkipTurn]:
-  #           request.for_drawn_card = for_drawn_card
-          
-  #         # fix this to first construct the types 
-  #         if type(request) in allowed_input_types:
-  #           self._input_queue.put(request)
-  #           # print('valid request')
-  #           break
-  #         else:
-  #           # print('invalid input!')
-  #           pass
-        
-  #       time.sleep(TerminalController.POLL_RATE)
-
-  #       if not self._stop_queue.empty(): 
-  #         self._stop_queue.get_nowait()
-  #         break
 
   def _handle_action(self, request: Request) -> None:
     if type(request) is DealCard:
@@ -369,17 +325,3 @@ class HardwareController(Controller):
   def reset(self):
     super().reset()
   
-
-
-
-
-
-'''
-I'm starting to think that this guy should be told what to listen for,
-and ignore anything that's not what it should be listening for (but it can also listen for UNO calls / bluffs)
-but, the UNO state should not hang when asking for it to listen, and this thing needs to be interruptable when it listens
-which it already is?
-
-In that case, I would sort of need to switch around the ordering, I would need to make it so that the state sends
-these listening requests, and the 
-'''
