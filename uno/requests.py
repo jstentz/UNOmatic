@@ -2,9 +2,17 @@
 All of the atomic requests happening between the nodes in the system.
 '''
 
+# enables lazy type annotation resolving
+from __future__ import annotations
 
-# TODO: add types
 from typing import Collection
+
+# only import what we need if we are doing type checking
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  from uno.uno import DisplayUNOState
+  from uno.player import Player
+  from uno.card import Card, Color
 
 class Request:
   pass
@@ -13,12 +21,12 @@ class Request:
 
 # TODO: maybe split this up as to not classify all the time
 class PlayCard(Request):
-  def __init__(self, card, for_drawn_card: bool = False):
+  def __init__(self, card: Card, for_drawn_card: bool = False):
     self.card = card
     self.for_drawn_card = for_drawn_card
 
 class DealtCard(Request):
-  def __init__(self, card, player):
+  def __init__(self, card: Card, player):
     self.card = card
     self.player = player
 
@@ -27,7 +35,7 @@ class SkipTurn(Request):
     self.for_drawn_card = for_drawn_card
 
 class SetColor(Request):
-  def __init__(self, color) -> None:
+  def __init__(self, color: Color) -> None:
     self.color = color
 
 class Bluff(Request):
@@ -36,16 +44,15 @@ class Bluff(Request):
 
 class CallUNO(Request):
   # the card that they played UNO with
-  def __init__(self, card, for_drawn_card: bool = False):
+  def __init__(self, card: Card, for_drawn_card: bool = False):
     self.card = card
     self.for_drawn_card = for_drawn_card
 
 class UNOFail(Request):
   pass
 
-
 class CorrectedState(Request):
-  def __init__(self, corrected_state) -> None:
+  def __init__(self, corrected_state: DisplayUNOState) -> None:
     self.corrected_state = corrected_state
 
 ############################ Requests to Controller ############################
@@ -55,7 +62,7 @@ class GoNextPlayer(Request):
     self.dir = dir
 
 class DealCard(Request):
-  def __init__(self, player) -> None:
+  def __init__(self, player: Player) -> None:
     self.player = player
 
 class GetUserInput(Request):
@@ -66,7 +73,7 @@ class GetUserInput(Request):
 ############################ Requests to Displayer ############################
 
 class CurrentState(Request):
-  def __init__(self, state) -> None:
+  def __init__(self, state: DisplayUNOState) -> None:
     self.state = state
 
 

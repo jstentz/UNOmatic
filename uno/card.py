@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Optional, Collection
 from enum import IntEnum
-import os
 
 # only import what we need if we are doing type checking
 from typing import TYPE_CHECKING
@@ -61,6 +60,10 @@ class Card:
   # this is just here so any instance of a Card has this method 
   def is_playable(self, top_card, deck_color: Color) -> bool:
     pass
+
+  # get's the value of the card for scoring purposes
+  def get_value(self):
+    pass
   
   def __eq__(self, other) -> bool:
     return isinstance(other, Card) \
@@ -88,6 +91,9 @@ class Number(Card):
 
     # advance to the next player
     state.go_next_player()
+
+  def get_value(self):
+    return self.number
     
 
 class PlusTwo(Card):
@@ -121,6 +127,9 @@ class PlusTwo(Card):
     # go to the next player
     state.go_next_player()
 
+  def get_value(self):
+    return 20
+
 class Skip(Card):
   def __init__(self, color: Optional[Color]):
     super().__init__(color=color, number=None)
@@ -139,6 +148,9 @@ class Skip(Card):
     # skip a player
     state.go_next_player(is_turn_end=False)
     state.go_next_player()
+
+  def get_value(self):
+    return 20
 
 class Reverse(Card):
   def __init__(self, color: Optional[Color]):
