@@ -35,13 +35,14 @@ class Manager:
 
     self.controller = controller_type(self.controller_queue, self.manager_queue)
     self.state = UNO(self.state_queue, self.manager_queue) # TODO: change this
-    self.displayers = [displayer_type() for displayer_type in displayer_types] # TODO: change this
+    self.displayers = [displayer_type(displayer_queue, self.manager_queue) for displayer_type, displayer_queue in zip(displayer_types, self.displayer_queues)] # TODO: change this
 
 
   def start(self):
     self.controller.start()
     self.state.start()
-    # TODO: start the displayer
+    for displayer in self.displayers:
+      displayer.start()
 
     # main control flow loop
     while True:
@@ -58,9 +59,8 @@ class Manager:
         self.controller.reset()
         self.state.reset(request)
 
-        # TODO: uncomment when displayers set up
-        # for displayer in self.displayers:
-        #   displayer_queue.reset()
+        for displayer in self.displayers:
+          displayer.reset()
 
       elif type(request) in Manager.TO_CONTROLLER:
         self.controller_queue.put(request)

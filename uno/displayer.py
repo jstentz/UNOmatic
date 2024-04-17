@@ -9,6 +9,8 @@ from __future__ import annotations
 import tkinter as tk
 from PIL import Image, ImageTk
 import os
+from threading import Thread
+from queue import Queue
 
 
 from uno.card import Card, Wild, PlusFour
@@ -22,24 +24,46 @@ if TYPE_CHECKING:
   from uno.uno import UNO
 
 class Displayer:
-  def __init__(self):
-    pass
+  def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request]):
+    self._input_queue = input_queue
+    self._output_queue = output_queue
+    self._main_loop_thread = Thread(target=self._main_loop, daemon=True)
 
+
+  # starts the thread to listen on the queues
+  def start(self):
+    self._main_loop_thread.start()
+
+  # resets the displayer
   def reset(self):
     pass
 
-  # show what the game state looks like
+  def _main_loop(self):
+    while True:
+      request = self._input_queue.get()
+
+      if type(request) is CurrentState:
+        self.display_state(request.state)
+      elif type(request) is CorrectedState:
+        # TODO: handle this 
+        pass
+      else:
+        print('Unknown request sent to Displayer')
+
+  # display the game state in a non-blocking way
   def display_state(self, state: UNO) -> None:
     pass
 
-  # signal that we have entered an invalid state
-  def signal_invalid_state(self, state: UNO) -> None:
-    pass
+  # TODO: need some function that listens for state corrections and forwards them to the manager
+
+  # # signal that we have entered an invalid state
+  # def signal_invalid_state(self, state: UNO) -> None:
+  #   pass
 
 
 class TerminalDisplayer(Displayer):
-  def __init__(self):
-    self.reset()
+  def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request]):
+    super().__init__(input_queue, output_queue)
 
   def reset(self) -> None:
     pass
@@ -56,16 +80,26 @@ class TerminalDisplayer(Displayer):
 
     # print everyone's hands  
     for player in state.players:
-      print(player.hand)
+      if player.position == state.turn:
+        print('--->', end='')
+        if player.drawn_card is not None:
+          print(player.hand, end='')
+          print(' Drawn card: ' + str(player.drawn_card))
+        else:
+          print(player.hand)
+      else:  
+        print('    ', end='')
+        print(player.hand)
   
-  def signal_invalid_state(self, state: UNO) -> None:
-    print('The board has entered an invalid state. Exiting...')
-    self.display_state(state)
-    exit(1)
+  # def signal_invalid_state(self, state: UNO) -> None:
+  #   print('The board has entered an invalid state. Exiting...')
+  #   self.display_state(state)
+  #   exit(1)
 
 
 class TkDisplayer(Displayer):
-  def __init__(self):
+  def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request]):
+    super().__init__(input_queue, output_queue)
     self.window = tk.Tk()
     self.window.title('UNO!')
     self.height = 720
@@ -75,7 +109,7 @@ class TkDisplayer(Displayer):
     self.margin = 10
     self.canvas = tk.Canvas(self.window, width=self.width, height=self.height)
     self.canvas.pack(fill=tk.BOTH, expand=tk.YES)
-    # self.window.update_idletasks()
+    self.window.update_idletasks()
 
     # fill a list of all card images
     self.images: dict[str, ImageTk.PhotoImage] = {}
@@ -84,8 +118,6 @@ class TkDisplayer(Displayer):
     for file_name in os.listdir(folder_path):
       path = os.path.join(folder_path, file_name)
       self.images[file_name] = ImageTk.PhotoImage(Image.open(path).resize((self.card_width, self.card_height)))
-
-    self.reset()
 
   def reset(self) -> None:
     pass
@@ -96,7 +128,6 @@ class TkDisplayer(Displayer):
   def display_state(self, state: UNO) -> None:
     self.canvas.delete(tk.ALL)
     # curr_player: Player = state.players[state.turn]
-
     
     # draw all of the player's hands
     for player_idx, player in enumerate(state.players):

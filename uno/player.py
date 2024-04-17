@@ -10,6 +10,8 @@ from uno.card import Color, Card
 class Player:
   def __init__(self, hand: Collection[Card], position: int, name: Optional[str] = None):
     self.hand = hand
+    # used for holding the temporary card they could play when drawing a card
+    self.drawn_card: Optional[Card] = None
     self.position = position
     self.name = name if name is not None else f'Player {position}'
 

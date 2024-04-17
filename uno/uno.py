@@ -67,7 +67,7 @@ class UNO:
     while True:
       request = self._input_queue.get()
 
-      if type(request) in [CurrentState, CorrectedState]:
+      if type(request) is CorrectedState:
         # TODO: handle these requests
         pass
       elif type(request) in [PlayCard, CallUNO, SkipTurn] and request.for_drawn_card:
@@ -95,7 +95,7 @@ class UNO:
 
         # pop this card off the players hand
         curr_player.remove_card(card)
-        
+
 
         self._sequence_thread = Thread(target=card.play_card, args=(self,), daemon=True)
 
@@ -154,7 +154,9 @@ class UNO:
     if (received_request := self.transaction_sync(DealCard(curr_player))) is None: return
 
     received_card = received_request.card
-    print(f'Received card: {received_card}')
+
+    # for displaying later, mark received card
+    curr_player.drawn_card = received_card
 
     if received_card.is_playable(self.discard_pile.peek(), self.color):
       # ask them if they want to play the card
@@ -171,6 +173,8 @@ class UNO:
           # add the card to their hand 
           curr_player.receive_card(received_card)
           self.call_uno_player = None
+          # reset this to be None
+          curr_player.drawn_card = None
           self.go_next_player()
           break
         elif received_request.card == received_card:
@@ -185,6 +189,8 @@ class UNO:
       
     else:
       curr_player.receive_card(received_request.card)
+      # reset this to be None
+      curr_player.drawn_card = None
       self.go_next_player()
 
   # punish the player at position pos
@@ -245,6 +251,10 @@ class UNO:
         request_list.append(CallUNO)
 
       self._output_queue.put(GetUserInput(request_list))
+
+      # DEBUGGING
+      # TODO: REMOVE
+      self._output_queue.put(CurrentState(self))
 
   def go_prev_player(self) -> None:
     self._output_queue.put(GoNextPlayer(-self.dir))
