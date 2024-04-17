@@ -25,7 +25,6 @@ void setup() {
     while (1)
       ;
   }
-  stepperMotor->release();
   stepperMotor->setSpeed(60);
   dcMotor->run(RELEASE);
   dcMotor->setSpeed(255);
@@ -54,13 +53,6 @@ void loop() {
         delay(700);
         dcMotor->run(RELEASE);
         delay(300);
-        // servo.attach(9);
-        // for (int i = 0; i < 2; i++) {
-        //   servo.write(0);
-        //   delay(150);
-        //   servo.write(180);
-        //   delay(150);
-        // }
     } else if (cmd == 'u') {
         servo.attach(9);  // attaches the servo on pin 9 to the servo object
         servo.write(180);
@@ -69,9 +61,9 @@ void loop() {
     } else if (cmd == 'r') {  // rotate
       uint8_t steps, dir;
       if (prev_dir == -1 || value == prev_dir) {
-        steps = 198;
+        steps = 200;
       } else {
-        steps = 212;
+        steps = 209;
       }
       if (value == 1) {
         dir = FORWARD;
@@ -80,7 +72,6 @@ void loop() {
       }
       prev_dir = value;
       stepperMotor->step(steps, dir, DOUBLE);
-      stepperMotor->release();
     }
     if (dealt) {
       Serial.println("t");

@@ -178,14 +178,15 @@ class HardwareController(Controller):
 
 
   key_map: list[list[Optional[type[Request]]]] = [[PlayCard, CallUNO, SetColor],
-                                        [SkipTurn, UNOFail, SetColor],
-                                        [None, Bluff, SetColor],
-                                        [ControllerReset, Bluff, SetColor]]
+                                                  [SkipTurn, UNOFail, SetColor],
+                                                  [None, Bluff, SetColor],
+                                                  [ControllerReset, Bluff, SetColor]]
   bluff_map: dict[int, bool] = {2: True, 3: False}
   color_map: list[Color] = [Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW]
 
   def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request]):
     super().__init__(input_queue, output_queue)
+    self.lock_init()
     self.ser_init()
     self.cam_init()
     self.keypad_init()
@@ -198,6 +199,12 @@ class HardwareController(Controller):
     self.ser = serial.Serial("/dev/ttyACM0", 9600, timeout=30)
     time.sleep(2)
 
+  def ser_wait(self) -> str:
+    while True:
+      if self.ser.in_waiting > 0:
+        return self.ser.readline().decode("ascii").strip()
+      time.sleep(HardwareController.POLL_RATE)
+        
 
   def cam_init(self) -> None:
     self.cam_bot = Picamera2(0)
@@ -288,28 +295,30 @@ class HardwareController(Controller):
 
   def _handle_action(self, request: Request) -> None:
     if type(request) is GoNextPlayer:
-      self.ser.write(f'r(dir)\n'.encode("ascii"))
-      _ = self.ser.readline().decode("ascii").strip()
+      self.ser.write(f'r{request.dir}\n'.encode("ascii"))
+      _ = self.ser_wait()
     elif type(request) is DealCard:
       image = self.cam_bot.capture_array().astype(np.float32) / 255
 
       self.ser.write("d\n".encode("ascii"))
       labels = get_card(self.model_bot, self.model_color, image, False)
-      if self.ser.readline().decode("ascii").strip() == "t":
+      if self.ser_wait() == "t":
         card = card_from_classification(*labels)
         self._output_queue.put(DealtCard(card, request.player))
+        return
 
       for _ in range(2):
         self.ser.write("u\n".encode("ascii"))
-        _ = self.ser.readline().decode("ascii").strip()
+        _ = self.ser_wait()
         self.ser.write("u\n".encode("ascii"))
-        _ = self.ser.readline().decode("ascii").strip()
+        _ = self.ser_wait()
         self.ser.write("d\n".encode("ascii"))
-        if self.ser.readline().decode("ascii").strip() == "t":
+        if self.ser_wait() == "t":
           card = card_from_classification(*labels)
           self._output_queue.put(DealtCard(card, request.player))
+          return
         self.ser.write("u\n".encode("ascii"))
-        _ = self.ser.readline().decode("ascii").strip()     
+        _ = self.ser_wait()
 
       while True:
         button_press = self.keypad_read()
