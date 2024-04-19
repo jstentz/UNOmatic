@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+</head>
+<body>
+    <p id=test></p>
+    <div id="landing">
+	<input type="text" id="num_players" placeholder="Number of Players">
+	<button id="start_game_btn">START_GAME</button>
+    </div>
+    <script type="text/javascript" charset="utf-8">
+	var socket = io();
+	document.getElementById("start_game_btn").addEventListener("click", function() {
+	    socket.emit("new_game", document.getElementById("num_players").value);
+	});
+	
+	socket.on("test", function(num_players) {
+	    document.getElementById("test").innerText = num_players.num_players;
+	});
+    </script>
+</body>
