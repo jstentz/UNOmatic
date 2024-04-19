@@ -46,7 +46,7 @@ class UNO:
   def start(self):
     self._main_loop_thread.start()
     
-  def reset(self, request: Reset):
+  def reset(self, request: Request):
     # check to see if there is a lingering card player thread
     if self._sequence_thread is not None:
       self._internal_queue.put(request)
@@ -56,8 +56,6 @@ class UNO:
     while not self._internal_queue.empty():
       self._internal_queue.get()
 
-    self.hand_size: int = request.hand_size
-    self.num_players: int = request.num_players
     self.discard_pile: Deck = Deck(0)
     self.color: Optional[Color] = None # this is extra info for when the top card is wild or plus4
     self.turn: int = 0 # stores the index of the current player's turn
@@ -69,8 +67,18 @@ class UNO:
     # stores who is punishable for not calling uno
     self.uno_fail_player: Optional[int] = None
 
-    # generate players with empty hands
-    self.players: Collection[Player] = [Player([], pos) for pos in range(self.num_players)]
+    if type(request) is Reset:
+      # generate players with empty hands
+      self.hand_size: int = request.hand_size
+      self.num_players: int = request.num_players
+      self.end_score: int = request.end_score
+      self.players: Collection[Player] = [Player([], pos) for pos in range(self.num_players)]
+    # else, we received a round reset
+    else:
+      # clear each players hand
+      print('here')
+      for player in self.players:
+        player.clear_hand()
 
     self._sequence_thread = Thread(target=self.run_init_phase, daemon=True)
 
@@ -139,8 +147,6 @@ class UNO:
         # forward along to card handler
         self._internal_queue.put(request)
 
-  def is_game_over(self):
-    return any(map(lambda p: p.hand == [], self.players))
   
   def run_init_phase(self):
     for pos in range(self.num_players):
@@ -251,24 +257,43 @@ class UNO:
     self._output_queue.put(GoNextPlayer(self.dir))
     self.turn = (self.turn + self.dir) % self.num_players
 
-    # check to see what we should listen for 
     if is_turn_end:
-      curr_player = self.players[self.turn]
-      request_list = [PlayCard, SkipTurn]
+      self.handle_turn_end()
+      
 
-      if self.call_uno_player is not None:
-        self.uno_fail_player = self.call_uno_player
-        self.call_uno_player = None
-        request_list.append(UNOFail)
+  def handle_turn_end(self) -> None:
+    if (round_winner := self.get_round_winner()) is not None:
+      # update the winners score
+      self.update_score(round_winner)
 
-      if len(curr_player.hand) == 2:
-        self.call_uno_player = self.turn
-        request_list.append(CallUNO)
+      # check if someone won the game
+      game_winner = self.get_game_winner()
 
-      self._output_queue.put(GetUserInput(request_list))
+      # game over
+      if game_winner is not None:
+        self._output_queue.put(GameOver(copy.deepcopy(game_winner)))
+      # round over
+      else:
+        self._output_queue.put(RoundOver(copy.deepcopy(round_winner)))
+      return
+    
+    # handle normal turn over things
+    curr_player = self.players[self.turn]
+    request_list = [PlayCard, SkipTurn]
 
-      # update the displayer
-      self._send_update_to_displayer()
+    if self.call_uno_player is not None:
+      self.uno_fail_player = self.call_uno_player
+      self.call_uno_player = None
+      request_list.append(UNOFail)
+
+    if len(curr_player.hand) == 2:
+      self.call_uno_player = self.turn
+      request_list.append(CallUNO)
+
+    self._output_queue.put(GetUserInput(request_list))
+
+    # update the displayer
+    self._send_update_to_displayer()
 
   def go_prev_player(self) -> None:
     self._output_queue.put(GoNextPlayer(-self.dir))
@@ -280,13 +305,23 @@ class UNO:
   def reverse(self) -> None:
     self.dir = -self.dir
 
+  def get_game_winner(self) -> Optional[Player]:
+    for player in self.players:
+      if player.score >= self.end_score:
+        return player
+    return None
+  
+  def get_round_winner(self) -> Optional[Player]:
+    for player in self.players:
+      if player.hand == [ ]:
+        return player
+    return None
+
   # compute the score this person would get if they win
-  def get_score(self, player: Player):
-    score = 0
+  def update_score(self, round_winner: Player) -> None:
     for other_player in self.players:
-      if other_player is not player:
-        score += sum(map(Card.get_value, other_player.hand))
-    return score
+      if other_player is not round_winner:
+        round_winner.score += sum(map(lambda card: card.get_value(), other_player.hand))
 
   # def player_has_uno(self) -> bool:
   #   return [player for player in self.players if len(player.hand) == 1] != [ ] 

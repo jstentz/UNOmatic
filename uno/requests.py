@@ -5,7 +5,7 @@ All of the atomic requests happening between the nodes in the system.
 # enables lazy type annotation resolving
 from __future__ import annotations
 
-from typing import Collection
+from typing import Collection, Optional
 
 # only import what we need if we are doing type checking
 from typing import TYPE_CHECKING
@@ -111,21 +111,45 @@ class CurrentState(Request):
   def __repr__(self) -> str:
     # TODO: add more to this 
     return 'CurrentState'
+  
+class GameOver(Request):
+  def __init__(self, winning_player: Player) -> None:
+    self.winning_player = winning_player
+
+  def __repr__(self) -> str:
+    return 'GameOver'
+
+class RoundOver(Request):
+  def __init__(self, winning_player: Player) -> None:
+    self.winning_player = winning_player
+
+  def __repr__(self) -> str:
+    return 'RoundOver'
 
 ############################ Common Requests ############################
 
+# restarts an entire game
 class Reset(Request):
-  def __init__(self, num_players: int = 4, hand_size: int = 2) -> None:
+  def __init__(self, num_players: int = 4, hand_size: int = 1, end_score: int = 500) -> None:
     self.num_players = num_players
     self.hand_size = hand_size
+    self.end_score = end_score
 
   def __repr__(self) -> str:
-    return f'Reset[num_players={self.num_players}, hand_size={self.hand_size}]'
+    return f'Reset[num_players={self.num_players}, hand_size={self.hand_size}, end_score={self.end_score}]'
+  
+class RoundReset(Request):
+  def __repr__(self) -> str:
+    return 'RoundReset'
 
+  
 
 ############################ Internal Controller Requests ############################
 
 class ControllerReset(Request):
+  pass
+
+class ControllerRoundReset(Request):
   pass
 
 # TODO: add an internal displayer reset 

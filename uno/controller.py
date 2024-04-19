@@ -63,6 +63,8 @@ class Controller:
 
       if type(request) is ControllerReset:
         self._output_queue.put(Reset())
+      elif type(request) is ControllerRoundReset:
+        self._output_queue.put(RoundReset())
       elif type(request) is GetUserInput:
         self._listener_queue.put(request)
       elif type(request) in Controller.OutgoingRequests:
@@ -113,9 +115,11 @@ class TerminalController(Controller):
       return UNOFail()
     elif cmd == 'reset':
       return ControllerReset()
+    elif cmd == 'round_reset':
+      return ControllerRoundReset()
     
   def _input_listener(self):
-    allowed_input_types = [ControllerReset]
+    allowed_input_types = [ControllerReset, ControllerRoundReset]
     for_drawn_card = False
     # poll forever
     while True:
@@ -126,7 +130,7 @@ class TerminalController(Controller):
 
         request = self._listener_queue.get()
         if type(request) is Reset:
-          allowed_input_types = [ControllerReset]
+          allowed_input_types = [ControllerReset, ControllerRoundReset]
           for_drawn_card = False
           continue
         else:
@@ -144,7 +148,7 @@ class TerminalController(Controller):
           # fix this to first construct the types 
           if type(request) in allowed_input_types:
             self._input_queue.put(request)
-            allowed_input_types = [ControllerReset]
+            allowed_input_types = [ControllerReset, ControllerRoundReset]
             for_drawn_card = False
         except:
           print('Error when parsing command')

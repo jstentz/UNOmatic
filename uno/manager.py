@@ -24,7 +24,7 @@ class Manager:
   # TODO: add info about state correction from displayers
   TO_CONTROLLER = [GoNextPlayer, DealCard, GetUserInput]
   TO_STATE = [PlayCard, DealtCard, SkipTurn, SetColor, Bluff, CallUNO, UNOFail, CorrectedState]
-  TO_DISPLAYERS = [CurrentState]
+  TO_DISPLAYERS = [CurrentState, GameOver, RoundOver]
 
   def __init__(self, controller_type: type[Controller], displayer_types: Collection[type[Displayer]], logger: logging.Logger) -> None:
     # make all of the queues for communication
@@ -56,8 +56,7 @@ class Manager:
       request = self.manager_queue.get()
       self.logger.info(f'Manager received {request}')
 
-      if type(request) is Reset:
-
+      if type(request) in [Reset, RoundReset]:
         # clear everyone's queues
         queues_to_clear = [self.manager_queue, self.controller_queue, self.state_queue] + self.displayer_queues
         for queue in queues_to_clear:

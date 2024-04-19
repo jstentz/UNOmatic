@@ -47,6 +47,10 @@ class Displayer:
 
       if type(request) is CurrentState:
         self.display_state(request.state)
+      elif type(request) is GameOver:
+        print(f'{request.winning_player.name} has won the game! Their total score is {request.winning_player.score} points!')
+      elif type(request) is RoundOver:
+        print(f'{request.winning_player.name} has won the round! Their current score is {request.winning_player.score} points!')
       elif type(request) is CorrectedState:
         # TODO: handle this 
         pass
