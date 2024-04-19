@@ -8,6 +8,7 @@ def create_app():
     app.config["DEBUG"] = True
     app.config["SECRET_KEY"] = "secret"
 
+    # for html blueprints (rendering)
     app.register_blueprint(main)
 
     socketio.init_app(app)

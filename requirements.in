@@ -8,3 +8,5 @@ pyserial
 scikit-image
 flask
 flask-socketio
+python-socketio
+websocket-client

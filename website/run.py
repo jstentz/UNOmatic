@@ -1,3 +1,7 @@
+'''
+flask --app run run
+'''
+
 from website import create_app, socketio
 
 if __name__ == "main":

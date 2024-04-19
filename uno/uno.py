@@ -242,6 +242,8 @@ class UNO:
       request_list.append(CallUNO)
 
     self._output_queue.put(GetUserInput(request_list))
+
+    self._send_update_to_displayer()
     
 
   # performs a synchronous transaction 
@@ -336,3 +338,10 @@ class UNO:
     curr_player = self.players[self.turn]
     res += str(curr_player)
     return res
+  
+
+'''
+Issues to fix:
+ * can call uno fail on someone who doesn't have uno when skip turns happen
+ * buffering dealing phase
+'''
