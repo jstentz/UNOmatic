@@ -1,4 +1,0 @@
-          GameManager
-              |
-              v
-          Controller, Displayers, UNOState
