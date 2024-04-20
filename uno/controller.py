@@ -275,6 +275,9 @@ class HardwareController(Controller):
         if request_type is None:
           continue
 
+        if request_type not in allowed_input_types:
+          continue
+
         if request_type in [PlayCard, CallUNO]:
           image = self.cam_top.capture_array().astype(np.float32) / 255
           card = card_from_classification(*get_card(self.model_top, self.model_color, image, True))
@@ -293,10 +296,9 @@ class HardwareController(Controller):
           request.for_drawn_card = for_drawn_card
         
         # fix this to first construct the types 
-        if type(request) in allowed_input_types:
-          self._input_queue.put(request)
-          allowed_input_types = [ControllerReset]
-          for_drawn_card = False
+        self._input_queue.put(request)
+        allowed_input_types = [ControllerReset]
+        for_drawn_card = False
       
       time.sleep(HardwareController.POLL_RATE)
 
