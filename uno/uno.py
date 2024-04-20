@@ -11,6 +11,7 @@ from queue import Queue # used for golang-style channels
 from threading import Thread
 from enum import Enum
 import logging
+import json
 
 from uno.deck import Deck
 from uno.card import Color
@@ -20,17 +21,28 @@ from uno.requests import *
 
 import copy
 
-# constructs a display state by copying an uno state
+# constructs a display state by copying an uno state into json-able object
 class DisplayUNOState:
   def __init__(self, state: UNO):
-    self.hand_size: int = state.hand_size
-    self.num_players: int = state.num_players
+    self.hand_size = state.hand_size
+    self.num_players = state.num_players
     self.discard_pile = copy.deepcopy(state.discard_pile)
-    self.color: Optional[Color] = copy.deepcopy(state.color)
-    self.turn: int = state.turn
-    self.dir: int = state.dir 
-    self.players: Collection[Player] = copy.deepcopy(state.players)
+    self.color = copy.deepcopy(state.color)
+    self.turn = state.turn
+    self.dir = state.dir 
+    self.players = copy.deepcopy(state.players)
 
+  def to_json(self) -> str:
+    obj = {
+      'hand_size': self.hand_size,
+      'num_players': self.num_players,
+      'discard_pile': self.discard_pile.to_json(),
+      'color': self.color,
+      'turn': self.turn,
+      'dir': self.dir,
+      'players': [player.to_json() for player in self.players]
+    }
+    return obj
 
 class UNO:
 

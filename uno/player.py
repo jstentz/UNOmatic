@@ -48,6 +48,15 @@ class Player:
     self.drawn_card = None
     self.hand = []
 
+  def to_json(self):
+    obj = {
+      'hand': [card.to_json() for card in self.hand],
+      'drawn_card': self.drawn_card.to_json() if self.drawn_card is not None else None,
+      'position': self.position,
+      'name': self.name,
+      'score': self.score
+    }
+    return obj
   
   def _sort_hand(self) -> None:
     # sort by card color, then card type, then card number

@@ -11,19 +11,16 @@ from PIL import Image, ImageTk
 import os
 from threading import Thread
 from queue import Queue
-import copy
-
+import socketio
 
 from uno.card import Card, Wild, PlusFour
 from uno.player import Player
 from uno.requests import *
 
-
 # only import what we need if we are doing type checking
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from uno.uno import DisplayUNOState
-
 
 
 class Displayer:
@@ -51,9 +48,6 @@ class Displayer:
         print(f'{request.winning_player.name} has won the game! Their total score is {request.winning_player.score} points!')
       elif type(request) is RoundOver:
         print(f'{request.winning_player.name} has won the round! Their current score is {request.winning_player.score} points!')
-      elif type(request) is CorrectedState:
-        # TODO: handle this 
-        pass
       else:
         print('Unknown request sent to Displayer')
 
@@ -66,6 +60,40 @@ class Displayer:
   # # signal that we have entered an invalid state
   # def signal_invalid_state(self, state: UNO) -> None:
   #   pass
+
+class WebsiteDisplayer(Displayer):
+  def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request]):
+    super().__init__(input_queue, output_queue)
+
+    self.url = 'http://localhost:5000'
+    self.socketio = socketio.Client()
+
+    # connect to the web socket
+    try:
+      self.socketio.connect(self.url)
+    except:
+      print(f'Could not connect to {self.url}. Did you start the web server?')
+
+    # initialize the callback
+    @self.socketio.on('test')
+    def receive_website_request(data):
+      self.handle_website_request(data)
+
+  def reset(self) -> None:
+    pass
+
+  def handle_website_request(self, data):
+    # process the data that we get
+
+    # construct the request
+
+    # send that request in the output queue
+    print(f'WebsiteDisplayer got {data}')
+
+  def display_state(self, state: DisplayUNOState) -> None:
+    # package up the state and send it to the website
+    self.socketio.emit('from_pi', state.to_json())
+    # pass
 
 
 class TerminalDisplayer(Displayer):
@@ -105,6 +133,7 @@ class TerminalDisplayer(Displayer):
   #   exit(1)
 
 
+# DEPRICATED
 class TkDisplayer(Displayer):
   def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request]):
     super().__init__(input_queue, output_queue)

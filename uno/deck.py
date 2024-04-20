@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 import numpy as np
+import json
 
 from uno.card import Color
 from uno.card import Card, Number, PlusTwo, Skip, Reverse, PlusFour, Wild
@@ -32,6 +33,12 @@ class Deck:
   
   def __repr__(self) -> str:
     return f'TOP\n' + '\n'.join(map(lambda c: str(c), self.cards[::-1])) + '\nBOTTOM'
+  
+  def to_json(self) -> str:
+    obj = {
+      'cards': [card.to_json() for card in self.cards]
+    }
+    return obj
 
   # generates non-replacing cards based on distribution of UNO cards
   @staticmethod

@@ -41,6 +41,14 @@ class Card:
     else:
       self.image_name = f'{self.color.name.lower()}_{self.number if self.type == Number else self.type.__name__.lower()}.png'
 
+  def to_json(self):
+    obj = {
+      'color': self.color,
+      'number': int(self.number) if self.number is not None else None,
+      'type': self.type.__name__,
+      'image_name': self.image_name
+    }
+    return obj
 
   # ensures that we have valid entries for all cards
   def _validate(self) -> bool:
@@ -73,10 +81,10 @@ class Card:
   
   def __repr__(self) -> str:
     res = ''
-    res += f'{self.color.name:<8}' if self.color is not None else ''
-    res += f'{self.type.__name__:<8}' if self.type != Number else ''
-    res += f'{self.number}' if self.number is not None else ''
-    return res
+    res += f'{self.color.name} ' if self.color is not None else ''
+    res += f'{self.type.__name__} ' if self.type != Number else ''
+    res += f'{self.number} ' if self.number is not None else ''
+    return res.rstrip()
   
 class Number(Card):
   def is_playable(self, top_card: Card, deck_color: Color) -> bool:
