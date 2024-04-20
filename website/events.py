@@ -5,6 +5,8 @@ import base64
 
 from .extensions import socketio
 
+most_recent_state = None
+
 @socketio.on("connect")
 def handle_connect(data):
     print("new connection")
@@ -27,20 +29,15 @@ def handle_connect(data):
     
     sid = request.sid
     emit('get_images', images, room=sid)
-        
 
-@socketio.on("new_game")
-def handle_new_game(num_players):
-    print(f'message: {num_players}')
-    emit("test", {"num_players" : num_players}, broadcast=True)
+    if most_recent_state is not None:
+        print('sending state!')
+        emit('new_state', most_recent_state)
+        
 
 @socketio.on("from_pi")
 def handle_from_pi(data):
     # receive the state (or something else, like game over)
-    print(data)
-    print()
+    global most_recent_state
+    most_recent_state = data
     emit("new_state", data, broadcast=True)
-
-@socketio.on("from_pi_images")
-def handle_from_pi_images(data):
-    emit("get_images", data, broadcast=True)
