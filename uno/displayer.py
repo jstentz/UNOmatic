@@ -62,7 +62,7 @@ class Displayer:
   #   pass
 
 class WebsiteDisplayer(Displayer):
-  def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request]):
+  def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request], url: str):
     super().__init__(input_queue, output_queue)
 
     self.url = 'http://localhost:5000'

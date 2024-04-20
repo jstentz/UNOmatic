@@ -40,6 +40,11 @@ if __name__ == '__main__':
                       nargs='+',
                       default=['TerminalDisplayer'])
   
+  parser.add_argument('-u', '--url', 
+                      help='the url of the running website', 
+                      type=str,
+                      default='http://172.26.72.28:5000')
+  
   args = parser.parse_args()
 
   # get the classes the user wants to use
@@ -61,11 +66,5 @@ if __name__ == '__main__':
     logger.addHandler(logging.NullHandler())
 
   # create the objects from the classes
-  manager = Manager(controller_class, displayer_classes, logger)
+  manager = Manager(controller_class, displayer_classes, logger, args.url)
   manager.start()
-
-'''
-TODO:
- * what should happen if someone draws a plus4? in terms of bluffing?
- * person didn't call a bluff, and they had to draw a card to receive the cards
-'''

@@ -26,7 +26,7 @@ class Manager:
   TO_STATE = [PlayCard, DealtCard, SkipTurn, SetColor, Bluff, CallUNO, UNOFail, CorrectedState]
   TO_DISPLAYERS = [CurrentState]
 
-  def __init__(self, controller_type: type[Controller], displayer_types: Collection[type[Displayer]], logger: logging.Logger) -> None:
+  def __init__(self, controller_type: type[Controller], displayer_types: Collection[type[Displayer]], logger: logging.Logger, url: str) -> None:
     # make all of the queues for communication
     self.manager_queue = Queue()
     self.controller_queue = Queue()
@@ -38,7 +38,14 @@ class Manager:
     self.logger.info(f'Initialized {controller_type.__name__}')
     self.state = UNO(self.state_queue, self.manager_queue) # TODO: change this
     self.logger.info(f'Initialized UNO state')
-    self.displayers = [displayer_type(displayer_queue, self.manager_queue) for displayer_type, displayer_queue in zip(displayer_types, self.displayer_queues)] # TODO: change this
+    # self.displayers = [displayer_type(displayer_queue, self.manager_queue) for displayer_type, displayer_queue in zip(displayer_types, self.displayer_queues)] # TODO: change this
+    self.displayers = []
+    for displayer_type, displayer_queue in zip(displayer_types, self.displayer_queues):
+      if displayer_type.__name__ == 'WebsiteDisplayer':
+        self.displayers.append(displayer_type(displayer_queue, self.manager_queue, url))
+      else:
+        self.displayers.append(displayer_type(displayer_queue, self.manager_queue))
+    
     self.logger.info(f'Initialized {", ".join([displayer_type.__name__ for displayer_type in displayer_types])}')
 
   def clear_queues(self):

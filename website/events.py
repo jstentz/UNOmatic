@@ -15,6 +15,7 @@ def handle_new_game(num_players):
 
 @socketio.on("from_pi")
 def handle_from_pi(data):
+    # receive the state (or something else, like game over)
     print(f'got {data} from pi')
     send('Success!')
     
