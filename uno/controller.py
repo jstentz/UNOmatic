@@ -237,6 +237,9 @@ class HardwareController(Controller):
       col.set_value(1)
       for (j, row) in enumerate(self.row_lines):
         if row.get_value() == 1:
+          while row.get_value() == 1:
+            time.sleep(HardwareController.POLL_RATE)
+          time.sleep(0.050)
           col.set_value(0)
           self.keypad_lock.release()
           return (j, i)
