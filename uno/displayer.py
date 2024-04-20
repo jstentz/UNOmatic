@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from PIL import Image, ImageTk
+import io
 import os
 from threading import Thread
 from queue import Queue
@@ -65,7 +66,7 @@ class WebsiteDisplayer(Displayer):
   def __init__(self, input_queue: Queue[Request], output_queue: Queue[Request], url: str):
     super().__init__(input_queue, output_queue)
 
-    self.url = 'http://localhost:5000'
+    self.url = url
     self.socketio = socketio.Client()
 
     # connect to the web socket
@@ -78,6 +79,7 @@ class WebsiteDisplayer(Displayer):
     @self.socketio.on('test')
     def receive_website_request(data):
       self.handle_website_request(data)
+
 
   def reset(self) -> None:
     pass

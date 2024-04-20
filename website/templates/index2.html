@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display JSON Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .card {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" class="container"></div>
+
+<script>
+    const app = document.getElementById('app');
+
+    // Function to create and append HTML elements based on JSON data
+    function renderJSON(data) {
+        for (const player of data.players) {
+            const playerDiv = document.createElement('div');
+            playerDiv.className = 'card';
+            playerDiv.innerHTML = `
+                <p><strong>Name:</strong> ${player.name}</p>
+                <p><strong>Position:</strong> ${player.position}</p>
+                <p><strong>Score:</strong> ${player.score}</p>
+                <p><strong>Hand:</strong> ${player.hand.map(card => `${card.color}-${card.number}`).join(', ')}</p>
+            `;
+            app.appendChild(playerDiv);
+        }
+    }
+
+    // Call the render function with your JSON object
+    renderJSON(jsonObject);
+
+</script>
+
+</body>
+</html>

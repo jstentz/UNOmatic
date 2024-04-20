@@ -43,7 +43,7 @@ class Card:
 
   def to_json(self):
     obj = {
-      'color': self.color,
+      'color': self.color.name if self.color is not None else None,
       'number': int(self.number) if self.number is not None else None,
       'type': self.type.__name__,
       'image_name': self.image_name

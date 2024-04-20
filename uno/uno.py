@@ -37,7 +37,7 @@ class DisplayUNOState:
       'hand_size': self.hand_size,
       'num_players': self.num_players,
       'discard_pile': self.discard_pile.to_json(),
-      'color': self.color,
+      'color': self.color.name if self.color is not None else None,
       'turn': self.turn,
       'dir': self.dir,
       'players': [player.to_json() for player in self.players]
@@ -339,9 +339,6 @@ class UNO:
       if other_player is not round_winner:
         round_winner.score += sum(map(lambda card: card.get_value(), other_player.hand))
 
-  # def player_has_uno(self) -> bool:
-  #   return [player for player in self.players if len(player.hand) == 1] != [ ] 
-
   def __del__(self) -> None:
     # TODO: send a signal to self to end the thread
     pass
@@ -353,9 +350,3 @@ class UNO:
     res += str(curr_player)
     return res
   
-
-'''
-Issues to fix:
- * can call uno fail on someone who doesn't have uno when skip turns happen
- * buffering dealing phase
-'''

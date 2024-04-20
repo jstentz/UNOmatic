@@ -8,19 +8,56 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
 </head>
 <body>
-    <p id=test></p>
-    <div id="landing">
-	<input type="text" id="num_players" placeholder="Number of Players">
-	<button id="start_game_btn">START_GAME</button>
-    </div>
+    
+    <div id="state"></div>
     <script type="text/javascript" charset="utf-8">
-	var socket = io();
-	document.getElementById("start_game_btn").addEventListener("click", function() {
-	    socket.emit("new_game", document.getElementById("num_players").value);
-	});
-	
-	socket.on("test", function(num_players) {
-	    document.getElementById("test").innerText = num_players.num_players;
-	});
+        var socket = io();
+        var images = {};
+
+        const state_div = document.getElementById('state');
+        
+        // print state
+        socket.on("new_state", function(state) {
+            // clear the divs 
+            // var childDivs = document.getElementById('state').getElementsByTagName('div');
+
+            // for(const child of childDivs) {
+            //     state_div.removeChild(child);
+            // }
+
+            state_div.innerHTML = "";
+
+
+            for (const player of state.players) {
+                const playerDiv = document.createElement('div');
+                playerDiv.className = 'card';
+                playerDiv.innerHTML = `
+                    <p><strong>Name:</strong> ${player.name}</p>
+                    <p><strong>Position:</strong> ${player.position}</p>
+                    <p><strong>Score:</strong> ${player.score}</p>
+                `;
+
+                for (const card of player.hand) {
+                    var img = document.createElement('img');
+                    img.src = 'data:image/jpeg;base64,' + images[card.image_name];
+                    img.style.width = "100px";
+                    img.style.height = "auto";
+                    playerDiv.appendChild(img);
+                }
+
+                state_div.appendChild(playerDiv);
+            }
+            
+            // state_div.innerText = JSON.stringify(state, null, 4);
+        });
+
+
+        // load and cache the images sent on the socket
+        socket.on("get_images", function(received_images) {
+            console.log(received_images);
+            for (const image of received_images) {
+                images[image.image_name] = image.img;
+            }
+        });
     </script>
 </body>
