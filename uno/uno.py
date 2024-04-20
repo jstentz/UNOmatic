@@ -137,6 +137,8 @@ class UNO:
 
         if len(self.players[self.turn].hand) == 1:
           self.call_uno_player = self.turn
+        else:
+          self.call_uno_player = None
 
         self._sequence_thread = Thread(target=self.run_skip_turn, daemon=True)
 
