@@ -117,14 +117,14 @@ class GameOver(Request):
     self.winning_player = winning_player
 
   def __repr__(self) -> str:
-    return 'GameOver'
+    return f'GameOver[winning_player={self.winning_player.name}]'
 
 class RoundOver(Request):
   def __init__(self, winning_player: Player) -> None:
     self.winning_player = winning_player
 
   def __repr__(self) -> str:
-    return 'RoundOver'
+    return f'RoundOver[winning_player={self.winning_player.name}]'
 
 ############################ Common Requests ############################
 
