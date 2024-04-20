@@ -6,6 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Page</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* height: 100vh; */
+            margin: 0;
+            font-size: 24px;
+        }
+    </style>
 </head>
 <body>
     
@@ -22,15 +32,38 @@
             // clear the divs
             state_div.innerHTML = "";
 
+            const deckColor = document.createElement('div');
+            deckColor.innerHTML = `<p><strong>Deck Color: ${state.color}</strong></p>`;
+            state_div.appendChild(deckColor);
+
+            // add the top card
+            const topCard = document.createElement('img');
+            topCard.src = 'data:image/jpeg;base64,';
+
+            if (state.discard_pile.cards.length > 0) {
+                topCard.src += images[state.discard_pile.cards[0].image_name];
+            } else {
+                topCard.src += images["card_back.png"];
+            }
+
+            topCard.style.width = "100px";
+            topCard.style.height = "auto";
+            state_div.appendChild(topCard);
+
 
             for (const player of state.players) {
                 const playerDiv = document.createElement('div');
                 playerDiv.className = 'card';
-                playerDiv.innerHTML = `
-                    <p><strong>Name:</strong> ${player.name}</p>
-                    <p><strong>Position:</strong> ${player.position}</p>
-                    <p><strong>Score:</strong> ${player.score}</p>
-                `;
+
+                if (state.turn === player.position) {
+                    playerDiv.innerHTML = `
+                        <p><u><strong>${player.name}; Score: ${player.score}</strong></u></p>
+                    `;
+                } else {
+                    playerDiv.innerHTML = `
+                        <p><strong>${player.name}; Score: ${player.score}</strong></p>
+                    `;
+                }
 
                 for (const card of player.hand) {
                     var img = document.createElement('img');
@@ -42,6 +75,8 @@
 
                 state_div.appendChild(playerDiv);
             }
+            
+            state_div.style.alignContent = "center";
             
             // state_div.innerText = JSON.stringify(state, null, 4);
         });
