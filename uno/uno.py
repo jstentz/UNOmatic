@@ -111,10 +111,6 @@ class UNO:
           continue
       elif type(request) in [PlayCard, CallUNO]:
 
-        self.uno_fail_player = None
-        if type(request) is CallUNO:
-          self.call_uno_player = None
-          
         # reap the thread 
         if self._sequence_thread: self._sequence_thread.join() 
         
@@ -123,8 +119,18 @@ class UNO:
         curr_player: Player = self.players[self.turn]
         if card not in curr_player.get_playable_cards(self.discard_pile.peek(), self.color):
           print('Unplayable card')
-          self._output_queue.put(GetUserInput([PlayCard, SkipTurn]))
+          request_list = [PlayCard, SkipTurn]
+
+          if self.uno_fail_player is not None: request_list.append(UNOFail)
+          if self.call_uno_player is not None: request_list.append(CallUNO)
+
+          self._output_queue.put(GetUserInput(request_list))
           continue
+
+        self.uno_fail_player = None
+        if type(request) is CallUNO:
+          self.call_uno_player = None
+          
 
         # pop this card off the players hand
         curr_player.remove_card(card, self)
@@ -349,4 +355,8 @@ class UNO:
     curr_player = self.players[self.turn]
     res += str(curr_player)
     return res
+  
+'''
+you have 2 cards, you play an unplayable card, you can't call UNO again
+'''
   

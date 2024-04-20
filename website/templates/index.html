@@ -41,7 +41,7 @@
             topCard.src = 'data:image/jpeg;base64,';
 
             if (state.discard_pile.cards.length > 0) {
-                topCard.src += images[state.discard_pile.cards[0].image_name];
+                topCard.src += images[state.discard_pile.cards[state.discard_pile.cards.length - 1].image_name];
             } else {
                 topCard.src += images["card_back.png"];
             }

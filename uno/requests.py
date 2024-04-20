@@ -130,7 +130,7 @@ class RoundOver(Request):
 
 # restarts an entire game
 class Reset(Request):
-  def __init__(self, num_players: int = 4, hand_size: int = 7, end_score: int = 500) -> None:
+  def __init__(self, num_players: int = 4, hand_size: int = 2, end_score: int = 500) -> None:
     self.num_players = num_players
     self.hand_size = hand_size
     self.end_score = end_score

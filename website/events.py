@@ -40,4 +40,6 @@ def handle_from_pi(data):
     # receive the state (or something else, like game over)
     global most_recent_state
     most_recent_state = data
+    # print(data)
+    # print()
     emit("new_state", data, broadcast=True)
