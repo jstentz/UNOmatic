@@ -222,7 +222,8 @@ class UNO:
         elif received_request.card == received_card:
           if type(received_request) is CallUNO:
             self.call_uno_player = None
-          
+          # reset drawn card
+          curr_player.drawn_card = None
           # play the card
           received_card.play_card(self)
           break

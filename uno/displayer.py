@@ -82,8 +82,8 @@ class WebsiteDisplayer(Displayer):
 
     # initialize the callback for reset
     @self.socketio.on('round_reset')
-    def receive_round_reset_request(data):
-      self.handle_round_reset_request(data)
+    def receive_round_reset_request():
+      self.handle_round_reset_request()
 
 
 
@@ -92,16 +92,18 @@ class WebsiteDisplayer(Displayer):
 
   def handle_reset_request(self, data):
     # process the data that we get
-    num_players: int = data['num_players']
-    hand_size: int = data['num_cards']
-
+    try:
+      num_players: int = int(data['num_players'])
+      hand_size: int = int(data['num_cards'])
+    except:
+      return
     # construct the request
     request = Reset(num_players, hand_size)
 
     # send that request in the output queue
     self._output_queue.put(request)
 
-  def handle_round_reset_request(self, data):
+  def handle_round_reset_request(self):
     # construct the request
     request = RoundReset()
 
