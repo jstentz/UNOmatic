@@ -75,22 +75,39 @@ class WebsiteDisplayer(Displayer):
     except:
       print(f'Could not connect to {self.url}. Did you start the web server?')
 
-    # initialize the callback
-    @self.socketio.on('test')
-    def receive_website_request(data):
-      self.handle_website_request(data)
+    # initialize the callback for reset
+    @self.socketio.on('reset')
+    def receive_reset_request(data):
+      self.handle_reset_request(data)
+
+    # initialize the callback for reset
+    @self.socketio.on('round_reset')
+    def receive_round_reset_request(data):
+      self.handle_round_reset_request(data)
+
 
 
   def reset(self) -> None:
     pass
 
-  def handle_website_request(self, data):
+  def handle_reset_request(self, data):
     # process the data that we get
+    num_players: int = data['num_players']
+    hand_size: int = data['num_cards']
 
     # construct the request
+    request = Reset(num_players, hand_size)
 
     # send that request in the output queue
-    print(f'WebsiteDisplayer got {data}')
+    self._output_queue.put(request)
+
+  def handle_round_reset_request(self, data):
+    # construct the request
+    request = RoundReset()
+
+    # send that request in the output queue
+    self._output_queue.put(request)
+
 
   def display_state(self, state: DisplayUNOState) -> None:
     # package up the state and send it to the website
