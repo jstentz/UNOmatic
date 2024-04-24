@@ -18,6 +18,16 @@
     </style>
 </head>
 <body>
+    <div id="resets">
+        <form action="/reset" method="post">
+            <input type="text" id="num_players" name="num_players" placeholder="Number of Players">
+            <input type"text" id="num_cards" name="num_cards" placeholder="Number of Starting Cards">
+            <input type="submit" value="RESET">
+        </form>
+        <form action="/round_reset" method="post">
+            <input type="submit" value="ROUND RESET">
+        </form>
+    </div>
     
     <div id="state"></div>
     <script type="text/javascript" charset="utf-8">
