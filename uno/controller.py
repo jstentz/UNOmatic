@@ -183,7 +183,7 @@ class HardwareController(Controller):
 
   key_map: list[list[Optional[type[Request]]]] = [[PlayCard, CallUNO, SetColor],
                                                   [SkipTurn, UNOFail, SetColor],
-                                                  [None, Bluff, SetColor],
+                                                  [ControllerRoundReset, Bluff, SetColor],
                                                   [ControllerReset, Bluff, SetColor]]
   bluff_map: dict[int, bool] = {2: True, 3: False}
   color_map: list[Color] = [Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW]
@@ -255,7 +255,7 @@ class HardwareController(Controller):
     self.model_color = init_model(os.path.join(model_dir, 'model_color_pretrain.pth'), True)
     
   def _input_listener(self):
-    allowed_input_types = [ControllerReset]
+    allowed_input_types = [ControllerRoundReset, ControllerReset]
     for_drawn_card = False
     # poll forever
     while True:
@@ -263,7 +263,7 @@ class HardwareController(Controller):
 
         request = self._listener_queue.get()
         if type(request) is Reset:
-          allowed_input_types = [ControllerReset]
+          allowed_input_types = [ControllerRoundReset, ControllerReset]
           for_drawn_card = False
           continue
         else:
@@ -272,8 +272,6 @@ class HardwareController(Controller):
       
       if (button_press := self.keypad_read()) is not None:
         request_type = self.key_map[button_press[0]][button_press[1]]
-        if request_type is None:
-          continue
 
         if request_type not in allowed_input_types:
           continue
@@ -297,7 +295,7 @@ class HardwareController(Controller):
         
         # fix this to first construct the types 
         self._input_queue.put(request)
-        allowed_input_types = [ControllerReset]
+        allowed_input_types = [ControllerRoundReset, ControllerReset]
         for_drawn_card = False
       
       time.sleep(HardwareController.POLL_RATE)
@@ -316,24 +314,24 @@ class HardwareController(Controller):
         self._output_queue.put(DealtCard(card, request.player))
         return
 
-      for _ in range(2):
-        self.ser.write("u\n".encode("ascii"))
-        _ = self.ser_wait()
-        self.ser.write("u\n".encode("ascii"))
-        _ = self.ser_wait()
-        self.ser.write("d\n".encode("ascii"))
-        if self.ser_wait() == "t":
-          card = card_from_classification(*labels)
-          self._output_queue.put(DealtCard(card, request.player))
-          return
-        self.ser.write("u\n".encode("ascii"))
-        _ = self.ser_wait()
+      # for _ in range(2):
+      #   self.ser.write("u\n".encode("ascii"))
+      #   _ = self.ser_wait()
+      #   self.ser.write("u\n".encode("ascii"))
+      #   _ = self.ser_wait()
+      #   self.ser.write("d\n".encode("ascii"))
+      #   if self.ser_wait() == "t":
+      #     card = card_from_classification(*labels)
+      #     self._output_queue.put(DealtCard(card, request.player))
+      #     return
+      #   self.ser.write("u\n".encode("ascii"))
+      #   _ = self.ser_wait()
 
       while True:
         button_press = self.keypad_read()
         if button_press is None:
           continue
-        if self.key_map[button_press[0]][button_press[1]] is None:
+        if self.key_map[button_press[0]][button_press[1]] is PlayCard:
           break
 
       card = card_from_classification(*labels)
