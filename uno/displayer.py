@@ -46,14 +46,20 @@ class Displayer:
       if type(request) is CurrentState:
         self.display_state(request.state)
       elif type(request) is GameOver:
-        print(f'{request.winning_player.name} has won the game! Their total score is {request.winning_player.score} points!')
+        self.display_game_over(request)
       elif type(request) is RoundOver:
-        print(f'{request.winning_player.name} has won the round! Their current score is {request.winning_player.score} points!')
+        self.display_round_over(request)
       else:
         print('Unknown request sent to Displayer')
 
   # display the game state in a non-blocking way
   def display_state(self, state: DisplayUNOState) -> None:
+    pass
+
+  def display_game_over(self, request: GameOver) -> None:
+    pass
+
+  def display_round_over(self, request: RoundOver) -> None:
     pass
 
   # TODO: need some function that listens for state corrections and forwards them to the manager
@@ -86,7 +92,6 @@ class WebsiteDisplayer(Displayer):
       self.handle_round_reset_request()
 
 
-
   def reset(self) -> None:
     pass
 
@@ -110,11 +115,15 @@ class WebsiteDisplayer(Displayer):
     # send that request in the output queue
     self._output_queue.put(request)
 
+  def display_game_over(self, request: GameOver) -> None:
+    self.socketio.emit('pi_game_over', {'winning_player': request.winning_player.to_json()})
+
+  def display_round_over(self, request: RoundOver) -> None:
+    self.socketio.emit('pi_round_over', {'winning_player': request.winning_player.to_json()})
 
   def display_state(self, state: DisplayUNOState) -> None:
     # package up the state and send it to the website
-    self.socketio.emit('from_pi', state.to_json())
-    # pass
+    self.socketio.emit('pi_state', state.to_json())
 
 
 class TerminalDisplayer(Displayer):
@@ -148,6 +157,12 @@ class TerminalDisplayer(Displayer):
         print(player.hand)
     print()
   
+  def display_game_over(self, request: GameOver) -> None:
+    print(f'{request.winning_player.name} has won the game! Their total score is {request.winning_player.score} points!')
+
+  def display_round_over(self, request: RoundOver) -> None:
+    print(f'{request.winning_player.name} has won the round! Their current score is {request.winning_player.score} points!')
+
   # def signal_invalid_state(self, state: UNO) -> None:
   #   print('The board has entered an invalid state. Exiting...')
   #   self.display_state(state)
