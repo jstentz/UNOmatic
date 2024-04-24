@@ -288,6 +288,8 @@ class UNO:
       # update the winners score
       self.update_score(round_winner)
 
+      self._send_update_to_displayer()
+
       # check if someone won the game
       game_winner = self.get_game_winner()
 
@@ -342,7 +344,7 @@ class UNO:
   # compute the score this person would get if they win
   def update_score(self, round_winner: Player) -> None:
     for other_player in self.players:
-      if other_player is not round_winner:
+      if other_player.position != round_winner.position:
         round_winner.score += sum(map(lambda card: card.get_value(), other_player.hand))
 
   def __del__(self) -> None:

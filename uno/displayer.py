@@ -124,6 +124,7 @@ class WebsiteDisplayer(Displayer):
 
   def display_state(self, state: DisplayUNOState) -> None:
     # package up the state and send it to the website
+    # print(state.to_json())
     self.socketio.emit('pi_state', state.to_json())
 
 
