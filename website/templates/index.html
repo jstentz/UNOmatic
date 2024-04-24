@@ -29,8 +29,9 @@
         </form>
     </div>
     
-    <div id="winning_player">
-    </div>
+    <p id="game_winner"></p>
+    <p id="round_winner"></p>
+
     <div id="state"></div>
     <script type="text/javascript" charset="utf-8">
         var socket = io();
@@ -104,7 +105,11 @@
         
         socket.on("game_over", function(winning_player) {
             console.log(winning_player);
-            document.getElementById("winning_player").innerText = winning_player.winning_player;
+            document.getElementById("game_winner").innerText = winning_player.winning_player;
+        });
+        socket.on("round_over", function(winning_player) {
+            console.log(winning_player);
+            document.getElementById("round_winner").innerText = winning_player.winning_player.name;
         });
     </script>
 </body>

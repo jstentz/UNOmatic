@@ -47,3 +47,7 @@ def handle_pi_state(data):
 @socketio.on("pi_game_over")
 def handle_pi_game_over(data):
     emit("game_over", data, broadcast=True)
+
+@socketio.on("pi_round_over")
+def handle_pi_round_over(data):
+    emit("round_over", data, broadcast=True)
