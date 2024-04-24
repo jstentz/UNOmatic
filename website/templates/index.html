@@ -6,16 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Page</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            /* height: 100vh; */
-            margin: 0;
-            font-size: 24px;
-        }
-    </style>
+    <!-- <style> -->
+    <!--     body { -->
+    <!--         display: flex; -->
+    <!--         justify-content: center; -->
+    <!--         align-items: center; -->
+    <!--         /* height: 100vh; */ -->
+    <!--         margin: 0; -->
+    <!--         font-size: 24px; -->
+    <!--     } -->
+    <!-- </style> -->
 </head>
 <body>
     <div id="resets">
@@ -29,6 +29,8 @@
         </form>
     </div>
     
+    <div id="winning_player">
+    </div>
     <div id="state"></div>
     <script type="text/javascript" charset="utf-8">
         var socket = io();
@@ -98,6 +100,11 @@
             for (const image of received_images) {
                 images[image.image_name] = image.img;
             }
+        });
+        
+        socket.on("game_over", function(winning_player) {
+            console.log(winning_player);
+            document.getElementById("winning_player").innerText = winning_player.winning_player;
         });
     </script>
 </body>

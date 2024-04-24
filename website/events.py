@@ -35,11 +35,15 @@ def handle_connect(data):
         emit('new_state', most_recent_state)
         
 
-@socketio.on("from_pi")
-def handle_from_pi(data):
+@socketio.on("pi_state")
+def handle_pi_state(data):
     # receive the state (or something else, like game over)
     global most_recent_state
     most_recent_state = data
     # print(data)
     # print()
     emit("new_state", data, broadcast=True)
+
+@socketio.on("pi_game_over")
+def handle_pi_game_over(data):
+    emit("game_over", data, broadcast=True)
