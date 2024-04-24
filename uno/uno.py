@@ -88,7 +88,6 @@ class UNO:
     # else, we received a round reset
     else:
       # clear each players hand
-      print('here')
       for player in self.players:
         player.clear_hand()
 

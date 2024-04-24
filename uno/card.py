@@ -101,7 +101,7 @@ class Number(Card):
     state.go_next_player()
 
   def get_value(self):
-    return self.number
+    return int(self.number)
     
 
 class PlusTwo(Card):
