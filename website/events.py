@@ -1,5 +1,5 @@
 from flask import request
-from flask_socketio import emit, send
+from flask_socketio import emit
 import os
 import base64
 
