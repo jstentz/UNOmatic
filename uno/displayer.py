@@ -45,6 +45,7 @@ class Displayer:
       request = self._input_queue.get()
 
       if type(request) is CurrentState:
+        
         self.display_state(request.state)
       elif type(request) is GameOver:
         self.display_game_over(request)

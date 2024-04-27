@@ -40,7 +40,7 @@ class DisplayUNOState:
       'color': self.color.name if self.color is not None else None,
       'turn': self.turn,
       'dir': self.dir,
-      'players': [player.to_json() for player in self.players]
+      'players': [player.to_json() for player in self.players],
     }
     return obj
 
@@ -286,6 +286,7 @@ class UNO:
   def handle_turn_end(self) -> None:
     if (round_winner := self.get_round_winner()) is not None:
       # update the winners score
+      
       self.update_score(round_winner)
 
       self._send_update_to_displayer()
@@ -324,7 +325,8 @@ class UNO:
     self.turn = (self.turn - self.dir) % self.num_players
 
   def _send_update_to_displayer(self) -> None:
-    self._output_queue.put(CurrentState(DisplayUNOState(self)))
+    display_state = DisplayUNOState(self)
+    self._output_queue.put(CurrentState(display_state))
 
   def reverse(self) -> None:
     self.dir = -self.dir

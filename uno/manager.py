@@ -50,7 +50,7 @@ class Manager:
 
   def clear_queues(self):
     # clear everyone's queues
-    queues_to_clear = [self.manager_queue, self.controller_queue, self.state_queue] + self.displayer_queues
+    queues_to_clear = [self.manager_queue, self.controller_queue, self.state_queue]
     for queue in queues_to_clear:
       while not queue.empty():
         queue.get()
@@ -77,6 +77,7 @@ class Manager:
     # main control flow loop
     while True:
       request = self.manager_queue.get()
+      
       self.logger.info(f'Manager received {request}')
 
       if type(request) in [Reset, RoundReset]:
@@ -97,6 +98,8 @@ class Manager:
       elif type(request) in Manager.TO_STATE:
         self.state_queue.put(request)
       elif type(request) in Manager.TO_DISPLAYERS:
+        # if type(request) is CurrentState:
+        #   print(request.state.to_json())
         for displayer_queue in self.displayer_queues:
           displayer_queue.put(request)
       else:
