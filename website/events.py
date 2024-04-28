@@ -33,7 +33,15 @@ def handle_connect(data):
     if most_recent_state is not None:
         print('sending state!')
         emit('new_state', most_recent_state)
-        
+
+@socketio.on("website_reset")
+def handle_reset(data):
+    print('got website reset')
+    emit("reset", data, broadcast=True)
+
+@socketio.on("website_round_reset")
+def handle_reset(data):
+    emit("round_reset", broadcast=True)
 
 @socketio.on("pi_state")
 def handle_pi_state(data):

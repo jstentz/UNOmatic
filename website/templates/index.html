@@ -17,18 +17,22 @@
     <!--     } -->
     <!-- </style> -->
 </head>
-<body>
+<body style="background-color:rgb(53, 101, 77);">
     <div id="resets">
-        <form action="/reset" method="post">
-            <input type="text" id="num_players" name="num_players" placeholder="Number of Players">
-            <input type"text" id="num_cards" name="num_cards" placeholder="Number of Starting Cards">
-            <input type="submit" value="RESET">
-        </form>
-        <form action="/round_reset" method="post">
-            <input type="submit" value="ROUND RESET">
-        </form>
+        <input type="text" id="num_players" name="num_players" placeholder="Number of Players">
+        <input type="text" id="hand_size" name="hand_size" placeholder="Number of Starting Cards">
+        <button id="reset_button">RESET</button>
+        <button id="round_reset_button">ROUND RESET</button>
     </div>
-    
+
+    <!-- to be populated from the javascript -->
+    <div id="role">
+        <select id="role_dropdown">
+            <!-- <option value="role_unassigned">Unassigned</option>
+            <option value="role_moderator">Moderator</option> -->
+        </select>
+    </div>
+
     <p id="game_winner"></p>
     <p id="round_winner"></p>
 
@@ -36,11 +40,35 @@
     <script type="text/javascript" charset="utf-8">
         var socket = io();
         var images = {};
+        var role = null;
+        var most_recent_state = null;
 
         const state_div = document.getElementById('state');
         
-        // print state
-        socket.on("new_state", function(state) {
+        function render_state(state) {
+            most_recent_state = state;
+
+            // populate the role buttons
+            const role_dropdown = document.getElementById("role_dropdown");
+
+            role_dropdown.innerHTML = '';
+
+            const unassigned = document.createElement("option");
+            unassigned.value = 'role_unassigned';
+            unassigned.text = 'Unassigned';
+            role_dropdown.append(unassigned);
+
+            const moderator = document.createElement("option");
+            moderator.value = 'role_moderator';
+            moderator.text = 'Moderator';
+            role_dropdown.append(moderator);
+
+            for (const player of state.players) {
+                const player_element = document.createElement("option");
+                player_element.value = player.position.toString();
+                player_element.text = player.name;
+                role_dropdown.append(player_element);
+            }
 
             // clear the divs
             state_div.innerHTML = "";
@@ -80,7 +108,11 @@
 
                 for (const card of player.hand) {
                     var img = document.createElement('img');
-                    img.src = 'data:image/jpeg;base64,' + images[card.image_name];
+                    if (role === 'role_moderator' || role === player.position.toString()) {
+                        img.src = 'data:image/jpeg;base64,' + images[card.image_name];
+                    } else {
+                        img.src = 'data:image/jpeg;base64,' + images['card_back.png'];
+                    }
                     img.style.width = "100px";
                     img.style.height = "auto";
                     playerDiv.appendChild(img);
@@ -90,26 +122,51 @@
             }
             
             state_div.style.alignContent = "center";
-            
-            // state_div.innerText = JSON.stringify(state, null, 4);
-        });
+        }
+
+        // print state
+        socket.on("new_state", render_state);
 
 
         // load and cache the images sent on the socket
         socket.on("get_images", function(received_images) {
-            console.log(received_images);
             for (const image of received_images) {
                 images[image.image_name] = image.img;
             }
         });
         
         socket.on("game_over", function(winning_player) {
-            console.log(winning_player);
-            document.getElementById("game_winner").innerText = winning_player.winning_player;
+            // console.log(winning_player);
+            document.getElementById("game_winner").innerText = winning_player.winning_player.name + " has won the game! Their final score is " + winning_player.winning_player.score + " points!";
         });
         socket.on("round_over", function(winning_player) {
-            console.log(winning_player);
-            document.getElementById("round_winner").innerText = winning_player.winning_player.name;
+            // console.log(winning_player);
+            document.getElementById("round_winner").innerText = winning_player.winning_player.name + " has won the round! Their current score total is " + winning_player.winning_player.score + " points!";
         });
+
+        document.getElementById("reset_button").addEventListener("click", function() {
+            socket.emit("website_reset", {"num_players": document.getElementById("num_players").value,
+                                     "hand_size": document.getElementById("hand_size").value});
+        });
+
+        document.getElementById("round_reset_button").addEventListener("click", function() {
+            socket.emit("website_round_reset", "");
+        });
+
+
+        // handle role selection
+
+        var dropdown = document.getElementById("role_dropdown");
+
+        // Function to handle the change event
+        function dropdownChange() {
+            // Get the selected value
+            role = dropdown.value;
+            render_state(most_recent_state)
+        }
+
+        // Add event listener to detect changes in the dropdown
+        dropdown.addEventListener("change", dropdownChange);
+
     </script>
 </body>

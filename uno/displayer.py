@@ -101,7 +101,7 @@ class WebsiteDisplayer(Displayer):
     # process the data that we get
     try:
       num_players: int = int(data['num_players'])
-      hand_size: int = int(data['num_cards'])
+      hand_size: int = int(data['hand_size'])
     except:
       return
     # construct the request
