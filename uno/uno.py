@@ -341,7 +341,7 @@ class UNO:
     self._send_update_to_displayer()
 
   def go_prev_player(self) -> None:
-    self._output_queue.put(GoNextPlayer(-self.dir))
+    self._output_queue.put(GoNextPlayer(-self.dir, self.num_players))
     self.turn = (self.turn - self.dir) % self.num_players
 
   def _send_update_to_displayer(self) -> None:
