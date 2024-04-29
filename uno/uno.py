@@ -13,11 +13,13 @@ from enum import Enum
 import logging
 import json
 
+
 from uno.deck import Deck
 from uno.card import Color
 from uno.card import Card, Wild, PlusFour
 from uno.player import Player
 from uno.requests import *
+import uno.utils
 
 import copy
 
@@ -101,8 +103,7 @@ class UNO:
       request = self._input_queue.get()
 
       if type(request) is CorrectedState:
-        # TODO: handle these requests
-        pass
+        self.handle_state_correction(request.state_update)
       elif type(request) in [PlayCard, CallUNO, SkipTurn] and request.for_drawn_card:
         # just forward along to skip turn handler if we're drawing a card
         if request.for_drawn_card:
@@ -166,6 +167,25 @@ class UNO:
         # forward along to card handler
         self._internal_queue.put(request)
 
+  def handle_state_correction(self, state_correction):
+
+    position = state_correction['position']
+    card_idx = state_correction['card_idx']
+    card_color = state_correction['color']
+    card_type = state_correction['type']
+    new_card = uno.utils.card_from_string(card_color, card_type)
+
+    if position == 'top_card':
+      self.discard_pile.set_top_card(new_card)
+      self.color = uno.utils.color_from_string(card_color)
+    else:
+      position = int(position)
+      card_idx = int(card_idx)
+      self.players[position].hand[card_idx] = new_card
+      self.players[position]._sort_hand() 
+
+    # send back the updated state
+    self._send_update_to_displayer()
   
   def run_init_phase(self):
     for pos in range(self.num_players):

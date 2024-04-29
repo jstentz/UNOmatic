@@ -31,6 +31,10 @@ class Deck:
   def peek(self) -> Optional[Card]:
     return self.cards[-1] if self.cards else None
   
+  def set_top_card(self, card: Card) -> None:
+    if self.cards:
+      self.cards[-1] = card
+  
   def __repr__(self) -> str:
     return f'TOP\n' + '\n'.join(map(lambda c: str(c), self.cards[::-1])) + '\nBOTTOM'
   

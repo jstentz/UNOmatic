@@ -123,7 +123,9 @@ class WebsiteDisplayer(Displayer):
     self._output_queue.put(request)
 
   def handle_state_correction_request(self, data):
-    print(data)
+    request = CorrectedState(data)
+    
+    self._output_queue.put(request)
 
   def display_game_over(self, request: GameOver) -> None:
     self.socketio.emit('pi_game_over', {'winning_player': request.winning_player.to_json()})
