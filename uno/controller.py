@@ -302,7 +302,8 @@ class HardwareController(Controller):
 
   def _handle_action(self, request: Request) -> None:
     if type(request) is GoNextPlayer:
-      self.ser.write(f'r{request.dir}\n'.encode("ascii"))
+      steps = request.dir * (200*4) // request.num_players
+      self.ser.write(f'r{steps}\n'.encode("ascii"))
       _ = self.ser_wait()
     elif type(request) is DealCard:
       image = self.cam_bot.capture_array().astype(np.float32) / 255

@@ -60,17 +60,9 @@ void loop() {
         servo.detach();
     } else if (cmd == 'r') {  // rotate
       uint8_t steps, dir;
-      if (prev_dir == -1 || value == prev_dir) {
-        steps = 200;
-      } else {
-        steps = 209;
-      }
-      if (value == 1) {
-        dir = FORWARD;
-      } else {
-        dir = BACKWARD;
-      }
-      prev_dir = value;
+      steps = abs(value);
+      dir = (value > 0) ? FORWARD : BACKWARD;
+      prev_dir = value > 0;
       stepperMotor->step(steps, dir, DOUBLE);
     }
     if (dealt) {

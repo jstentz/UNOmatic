@@ -83,7 +83,7 @@ class CorrectedState(Request):
 class GoNextPlayer(Request):
   def __init__(self, dir: int, num_players: int) -> None:
     self.dir = dir
-    self.num_players
+    self.num_players = num_players
 
   def __repr__(self) -> str:
     return f'GoNextPlayer[dir={self.dir}]'
