@@ -93,6 +93,11 @@ class WebsiteDisplayer(Displayer):
     def receive_round_reset_request():
       self.handle_round_reset_request()
 
+    # initialize the callback for reset
+    @self.socketio.on('state_correction')
+    def receive_state_correction_request(data):
+      self.handle_state_correction_request(data)
+
 
   def reset(self) -> None:
     pass
@@ -116,6 +121,9 @@ class WebsiteDisplayer(Displayer):
 
     # send that request in the output queue
     self._output_queue.put(request)
+
+  def handle_state_correction_request(self, data):
+    print(data)
 
   def display_game_over(self, request: GameOver) -> None:
     self.socketio.emit('pi_game_over', {'winning_player': request.winning_player.to_json()})

@@ -71,8 +71,8 @@ class UNOFail(Request):
     return 'UNOFail'
 
 class CorrectedState(Request):
-  def __init__(self, corrected_state: DisplayUNOState) -> None:
-    self.corrected_state = corrected_state
+  def __init__(self, state_update: dict) -> None:
+    self.state_update = state_update
 
   def __repr__(self) -> str:
     # TODO: maybe this should be diff

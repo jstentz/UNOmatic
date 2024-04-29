@@ -43,6 +43,12 @@ def handle_reset(data):
 def handle_reset(data):
     emit("round_reset", broadcast=True)
 
+
+@socketio.on("website_state_correction")
+def handle_state_correction(data):
+    emit("state_correction", data, broadcast=True)
+
+
 @socketio.on("pi_state")
 def handle_pi_state(data):
     # receive the state (or something else, like game over)

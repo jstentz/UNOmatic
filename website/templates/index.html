@@ -17,7 +17,7 @@
     <!--     } -->
     <!-- </style> -->
 </head>
-<body style="background-color:rgb(53, 101, 77);">
+<body text="#ffffff" style="background-color:rgb(53, 101, 77);">
     <div id="resets">
         <input type="text" id="num_players" name="num_players" placeholder="Number of Players">
         <input type="text" id="hand_size" name="hand_size" placeholder="Number of Starting Cards">
@@ -37,6 +37,45 @@
     <p id="round_winner"></p>
 
     <div id="state"></div>
+
+    <div id="correction">
+        <select id="player_dropdown">
+        </select>
+
+        <select id="card_dropdown">
+        </select>
+
+        <select id="card_color_dropdown">
+            <option value="None">N/A</option>
+            <option value="RED">RED</option>
+            <option value="YELLOW">YELLOW</option>
+            <option value="GREEN">GREEN</option>
+            <option value="BLUE">BLUE</option>
+        </select>
+
+        <select id="card_type_dropdown">
+            <option value="PlusFour">+4</option>
+            <option value="Wild">Wild Card</option>
+            <option value="Skip">Skip</option>
+            <option value="Reverse">Reverse</option>
+            <option value="PlusTwo">+2</option>
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+        </select>
+
+        <button id="submit_correction">CORRECT STATE</button>
+
+    </div>
+
+
     <script type="text/javascript" charset="utf-8">
         var socket = io();
         var images = {};
@@ -70,6 +109,9 @@
                 role_dropdown.append(player_element);
             }
 
+
+
+
             // clear the divs
             state_div.innerHTML = "";
 
@@ -94,9 +136,11 @@
 
             for (const player of state.players) {
                 const playerDiv = document.createElement('div');
+
                 playerDiv.className = 'card';
 
                 if (state.turn === player.position) {
+                    playerDiv.style.backgroundColor = "#15453d";
                     playerDiv.innerHTML = `
                         <p><u><strong>${player.name}; Score: ${player.score}</strong></u></p>
                     `;
@@ -122,6 +166,25 @@
             }
             
             state_div.style.alignContent = "center";
+
+            // populate the state correction dropdowns
+
+            // players cards
+            const player_dropdown = document.getElementById("player_dropdown");
+
+            player_dropdown.innerHTML = '';
+
+            const top_card = document.createElement("option");
+            top_card.value = 'top_card';
+            top_card.text = 'Top Card';
+            player_dropdown.append(top_card);
+
+            for (const [position, player] of state.players.entries()) {
+                const player_option = document.createElement("option");
+                player_option.value = position;
+                player_option.text = player.name;
+                player_dropdown.append(player_option);
+            }
         }
 
         // print state
@@ -155,18 +218,54 @@
 
 
         // handle role selection
-
-        var dropdown = document.getElementById("role_dropdown");
-
-        // Function to handle the change event
-        function dropdownChange() {
-            // Get the selected value
-            role = dropdown.value;
-            render_state(most_recent_state)
-        }
+        var role_dropdown = document.getElementById("role_dropdown");
 
         // Add event listener to detect changes in the dropdown
-        dropdown.addEventListener("change", dropdownChange);
+        role_dropdown.addEventListener("change", function() {
+            // Get the selected value
+            role = role_dropdown.value;
+            render_state(most_recent_state);
+        });
+
+        // handle player selection
+        var player_dropdown = document.getElementById("player_dropdown");
+
+        // Add event listener to detect changes in the player dropdown
+        player_dropdown.addEventListener("change", function() {
+            // Get the selected value
+            position = player_dropdown.value;
+
+            // update the card selection dropdown
+            var card_dropdown = document.getElementById("card_dropdown");
+            card_dropdown.innerHTML = ``;
+
+            const player = most_recent_state.players[position];
+
+            for (const [card_idx, card] of player.hand.entries()) {
+                const card_option = document.createElement("option");
+                if (card.type === 'Number') {
+                    var card_name = card.color + ' ' + card.number;
+                } else if (card.type == 'Wild' || card.type == 'PlusFour') {
+                    var card_name = card.type;
+                } else {
+                    var card_name = card.color + ' ' + card.type;
+                }
+                card_option.value = card_idx; // UPDATE TO INDEX?
+                card_option.text = card_name;
+                card_dropdown.append(card_option);
+            }
+
+        });
+
+        document.getElementById("submit_correction").addEventListener("click", function() {
+            const data = {
+                "position": document.getElementById("player_dropdown").value,
+                "card_idx": document.getElementById("card_dropdown").value,
+                "type": document.getElementById("card_type_dropdown").value,
+                "color": document.getElementById("card_color_dropdown").value
+            }
+            socket.emit("website_state_correction", data);
+        });
 
     </script>
 </body>
