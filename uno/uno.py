@@ -296,7 +296,7 @@ class UNO:
 
 
   def go_next_player(self, is_turn_end: bool = True) -> None:
-    self._output_queue.put(GoNextPlayer(self.dir))
+    self._output_queue.put(GoNextPlayer(self.dir, self.num_players))
     self.turn = (self.turn + self.dir) % self.num_players
 
     if is_turn_end:

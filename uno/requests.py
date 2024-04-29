@@ -81,8 +81,9 @@ class CorrectedState(Request):
 ############################ Requests to Controller ############################
 
 class GoNextPlayer(Request):
-  def __init__(self, dir: int) -> None:
+  def __init__(self, dir: int, num_players: int) -> None:
     self.dir = dir
+    self.num_players
 
   def __repr__(self) -> str:
     return f'GoNextPlayer[dir={self.dir}]'
