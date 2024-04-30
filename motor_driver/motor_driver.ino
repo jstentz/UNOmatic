@@ -59,7 +59,8 @@ void loop() {
         delay(500);
         servo.detach();
     } else if (cmd == 'r') {  // rotate
-      uint8_t steps, dir;
+      uint16_t steps;
+      uint8_t dir;
       steps = abs(value);
       dir = (value > 0) ? FORWARD : BACKWARD;
       prev_dir = value > 0;
