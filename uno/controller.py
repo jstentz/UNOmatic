@@ -66,6 +66,7 @@ class Controller:
       elif type(request) is ControllerRoundReset:
         self._output_queue.put(RoundReset())
       elif type(request) is GetUserInput:
+        self._handle_action(request)
         self._listener_queue.put(request)
       elif type(request) in Controller.OutgoingRequests:
         self._output_queue.put(request)
@@ -180,6 +181,7 @@ class HardwareController(Controller):
   ("c2", 5),
   ("c3", 26)]
 
+  status_led_pin = ("status", 5)
 
   key_map: list[list[Optional[type[Request]]]] = [[PlayCard, CallUNO, SetColor],
                                                   [SkipTurn, UNOFail, SetColor],
@@ -193,7 +195,7 @@ class HardwareController(Controller):
     self.lock_init()
     self.ser_init()
     self.cam_init()
-    self.keypad_init()
+    self.gpio_init()
     self.model_init()
 
   def lock_init(self):
@@ -219,7 +221,7 @@ class HardwareController(Controller):
     self.cam_bot.start(show_preview=False)
     self.cam_top.start(show_preview=False)
 
-  def keypad_init(self) -> None:
+  def gpio_init(self) -> None:
     chip = gpiod.Chip('gpiochip4')
     self.row_lines = []
     for (consumer, pin) in HardwareController.row_pins:
@@ -230,6 +232,8 @@ class HardwareController(Controller):
         self.col_lines.append(chip.get_line(pin))
         self.col_lines[-1].request(consumer = consumer, type=gpiod.LINE_REQ_DIR_OUT)
         self.col_lines[-1].set_value(0)
+    self.led_line = chip.get_line(self.status_led_pin[1])
+    self.led_line.request(consumer=self.status_led_pin[0], type=gpiod.LINE_REQ_DIR_OUT)
 
   def keypad_read(self) -> Optional[tuple[int, int]]:
     self.keypad_lock.acquire()
@@ -305,6 +309,9 @@ class HardwareController(Controller):
       steps = request.dir * (200*4) // request.num_players
       self.ser.write(f'r{steps}\n'.encode("ascii"))
       _ = self.ser_wait()
+    elif type(request) is GetUserInput:
+      if self.invalid_card != request.for_invalid_card:
+        self.led_line.set_value(int(request.for_invalid_card))
     elif type(request) is DealCard:
       image = self.cam_bot.capture_array().astype(np.float32) / 255
 
@@ -340,5 +347,6 @@ class HardwareController(Controller):
 
 
   def reset(self):
+    self.invalid_card = False
     super().reset()
   
