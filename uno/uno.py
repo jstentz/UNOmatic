@@ -124,7 +124,7 @@ class UNO:
           if self.uno_fail_player is not None: request_list.append(UNOFail)
           if self.call_uno_player is not None: request_list.append(CallUNO)
 
-          self._output_queue.put(GetUserInput(request_list))
+          self._output_queue.put(GetUserInput(request_list, for_invalid_card=True))
           continue
 
         self.uno_fail_player = None
@@ -229,7 +229,8 @@ class UNO:
         request_list.append(CallUNO)
 
       while True:
-        if (received_request := self.transaction_sync(GetUserInput(request_list, for_drawn_card=True))) is None: return
+        for_invalid_card = False
+        if (received_request := self.transaction_sync(GetUserInput(request_list, for_drawn_card=True, for_invalid_card=for_invalid_card))) is None: return
         if type(received_request) is SkipTurn:
           # add the card to their hand 
           curr_player.receive_card(received_card, self)
@@ -247,6 +248,7 @@ class UNO:
           received_card.play_card(self)
           break
         print('Trying to play non-drawn card')
+        for_invalid_card = True
       
     else:
       curr_player.receive_card(received_request.card, self)

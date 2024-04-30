@@ -96,9 +96,10 @@ class DealCard(Request):
     return f'DealCard[player={self.player.name}]' if self.player is not None else f'DealCard[TOP_CARD]'
 
 class GetUserInput(Request):
-  def __init__(self, request_types: Collection[type[Request]], for_drawn_card: bool = False) -> None:
+  def __init__(self, request_types: Collection[type[Request]], for_drawn_card: bool = False, for_invalid_card: bool = False) -> None:
     self.request_types = request_types
     self.for_drawn_card = for_drawn_card
+    self.for_invalid_card = for_invalid_card
 
   def __repr__(self) -> str:
     return f'GetUserInput[request_types={",".join([request_type.__name__ for request_type in self.request_types])}{"" if not self.for_drawn_card else f", for_drawn_card=True"}]'
