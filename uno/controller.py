@@ -181,7 +181,7 @@ class HardwareController(Controller):
   ("c2", 5),
   ("c3", 26)]
 
-  status_led_pin = ("status", 5)
+  status_led_pin = ("status", 16)
 
   key_map: list[list[Optional[type[Request]]]] = [[PlayCard, CallUNO, SetColor],
                                                   [SkipTurn, UNOFail, SetColor],
