@@ -214,6 +214,9 @@ class PlusFour(Card):
     # go the next player
     state.go_next_player(is_turn_end=False)
 
+    state._send_update_to_displayer()
+
+    
     # ask them for a bluff answer
     # next_player = state.players[state.turn]
 
