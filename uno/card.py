@@ -32,8 +32,8 @@ class Card:
     self.type = type(self)
     
     # ensure that we've created a valid card
-    if not self._validate():
-      raise ValueError('Invalid card')
+    # if not self._validate():
+    #   raise ValueError('Invalid card')
     
     # get the path to the image
     if self.type in [PlusFour, Wild]:

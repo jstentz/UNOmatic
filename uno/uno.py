@@ -228,8 +228,8 @@ class UNO:
       if self.call_uno_player is not None:
         request_list.append(CallUNO)
 
+      for_invalid_card = False
       while True:
-        for_invalid_card = False
         if (received_request := self.transaction_sync(GetUserInput(request_list, for_drawn_card=True, for_invalid_card=for_invalid_card))) is None: return
         if type(received_request) is SkipTurn:
           # add the card to their hand 
