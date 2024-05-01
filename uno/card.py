@@ -39,7 +39,7 @@ class Card:
     if self.type in [PlusFour, Wild]:
       self.image_name = f'{self.type.__name__.lower()}.png'
     else:
-      self.image_name = f'{self.color.name.lower()}_{self.number if self.type == Number else self.type.__name__.lower()}.png'
+      self.image_name = f'{self.color.name.lower() if self.color is not None else "yellow"}_{self.number if self.type == Number else self.type.__name__.lower()}.png'
 
   def to_json(self):
     obj = {
